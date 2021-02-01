@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateUserResetTable extends Migration
+class Posts extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,12 @@ class CreateUserResetTable extends Migration
      */
     public function up()
     {
-        Schema::create('user_reset', function (Blueprint $table) {
+        Schema::create('posts', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('user_id');
-            $table->string('email');
-            $table->string('token')->unique();
+            $table->integer('group_id');
+            $table->longText('post_content')->nullable();
+            $table->integer('status');
             $table->timestamps();
         });
     }
@@ -29,6 +30,6 @@ class CreateUserResetTable extends Migration
      */
     public function down()
     {
-        Schema::drop('user_reset');
+        Schema::drop('posts');
     }
 }

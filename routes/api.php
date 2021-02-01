@@ -36,6 +36,14 @@ $api->version('v1', function ($api) {
         'as' => 'api.auth.reset',
         'uses' => 'App\Http\Controllers\Auth\AuthController@postReset',
     ]);
+    $api->get('/sidebar/popular', [
+        'as' => 'api.sidebar.popular',
+        'uses' => 'App\Http\Controllers\SidebarController@popular',
+    ]);
+    $api->post('/content/createPost', [
+        'as' => 'api.content.createPost',
+        'uses' => 'App\Http\Controllers\ContentController@createPost',
+    ]);
 
 
     // API
