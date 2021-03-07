@@ -12,8 +12,7 @@ use Illuminate\Http\Exception\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PasswordResetMail;
-use App\Http\Controllers\MailController;
-
+use Exception;
 class AuthController extends Controller
 {
     /**
@@ -71,6 +70,25 @@ class AuthController extends Controller
             'email' => 'required|email|max:255'
         ]);
     }
+    protected function validatePostReset2Request(Request $request)
+    {
+        $this->validate($request, [
+            'email' => 'required|email|max:255',
+            'pin' => 'required|max:6',
+            'token' => 'required'
+        ]);
+    }
+    
+    protected function validatePostReset3Request(Request $request)
+    {
+        $this->validate($request, [
+            'email' => 'required|email|max:255',
+            'token' => 'required',
+            'pin' => 'required|max:6',
+            'password' => 'required|min:8',
+            'password_confirmation' => 'required|min:8'
+        ]);
+    }
     
     /**
      * Validate register request.
@@ -83,8 +101,8 @@ class AuthController extends Controller
         $this->validate($request, [
             'email' => 'required|max:255',
             'email' => 'required|email|max:255',
-            'password' => 'required',
-            'password_confirmation' => 'required'
+            'password' => 'required|min:8',
+            'password_confirmation' => 'required|min:8'
         ]);
     }
 
@@ -251,13 +269,128 @@ class AuthController extends Controller
 
             $token = str_random(20) . md5($results->id);
 
+            function generateNumericOTP($n) { 
+      
+                // Take a generator string which consist of 
+                // all numeric digits 
+                $generator = "1357902468"; 
+              
+                // Iterate for n-times and pick a single character 
+                // from generator and append it to $result 
+                  
+                // Login for generating a random character from generator 
+                //     ---generate a random number 
+                //     ---take modulus of same with length of generator (say i) 
+                //     ---append the character at place (i) from generator to result 
+              
+                $result = ""; 
+              
+                for ($i = 1; $i <= $n; $i++) { 
+                    $result .= substr($generator, (rand()%(strlen($generator))), 1); 
+                } 
+              
+                // Return result 
+                return $result; 
+            }
+
+            $otp = generateNumericOTP(6);
+
             DB::table('user_reset')->insert([
                 'user_id' => $results->id,
                 'email' => $results->email,
-                'token' => $token
+                'token' => $token,
+                'otp' => $otp,
+                'status' => "0"
             ]);
 
-            Mail::send(new PasswordResetMail($results->email, $token));
+            try {
+                Mail::send(new PasswordResetMail($results->email, $otp));
+            
+                return response([
+                    'message' => 'Reset success',
+                    'token' => $token
+                ]);
+            } catch (Exception $ex) {
+                // Debug via $ex->getMessage();
+                return response([
+                    'message' => 'Reset error'
+                ]);
+            }
+
         }
     }
+
+    public function postReset2(Request $request) {
+        try {
+            $this->validatePostReset2Request($request);
+        } catch (HttpResponseException $e) {
+            return $this->onBadRequest();
+        }
+
+        $email = $request->only('email')["email"];
+        $token = $request->only('token')["token"];
+        $pin = $request->only('pin')["pin"];
+
+        $results = DB::table("user_reset")->where("email", $email)->where("token", $token)->where("otp", $pin)->where("status","0")->first();
+        $count = DB::table("user_reset")->where("email", $email)->where("token", $token)->where("otp", $pin)->where("status","0")->count();
+        if ($count == 0) {
+            return response([
+                'message' => 'PIN incorrect'
+            ]);
+        } else {
+
+            return response([
+                'message' => 'PIN correct'
+            ]);
+
+        }
+    } 
+    
+    public function postReset3(Request $request) {
+        try {
+            $this->validatePostReset3Request($request);
+        } catch (HttpResponseException $e) {
+            return $this->onBadRequest();
+        }
+
+        $email = $request->only('email')["email"];
+        $token = $request->only('token')["token"];
+        $pin = $request->only('pin')["pin"];
+        $password = $request->only('password')["password"];
+        $password_confirmation = $request->only('password_confirmation')["password_confirmation"];
+
+        if ($password !== $password_confirmation) {
+            return response([
+                'message' => 'Passwords does not match'
+            ]);
+        } else {
+
+            $results = DB::table("user_reset")->where("email", $email)->where("token", $token)->where("otp", $pin)->where("status","0")->first();
+            $count = DB::table("user_reset")->where("email", $email)->where("token", $token)->where("otp", $pin)->where("status","0")->count();
+            if ($count == 0) {
+                return response([
+                    'message' => 'PIN incorrect'
+                ]);
+            } else {
+    
+                DB::table("user_reset")
+                    ->where("email", $email)
+                    ->where("token", $token)
+                    ->where("otp", $pin)
+                    ->where("status","0")
+                    ->update(['status' => "1"]);
+                
+                DB::table("users")
+                    ->where("email", $email)
+                    ->update(['password' => app('hash')->make($password)]);
+    
+                return response([
+                    'message' => 'Password resetted'
+                ]);
+    
+            }
+
+        }
+
+    } 
 }

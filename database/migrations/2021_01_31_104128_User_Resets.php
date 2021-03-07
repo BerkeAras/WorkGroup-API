@@ -17,7 +17,9 @@ class UserResets extends Migration
             $table->increments('id');
             $table->integer('user_id');
             $table->string('email');
+            $table->string('otp');
             $table->string('token')->unique();
+            $table->string('status');
             $table->timestamps();
         });
     }

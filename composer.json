@@ -10,7 +10,9 @@
         "vlucas/phpdotenv": "~2.2",
         "krisanalfa/lumen-dingo-adapter": "^0.0.2",
         "wn/lumen-generators": "^1.3",
-        "illuminate/mail": "5.3.*"
+        "illuminate/mail": "5.3.*",
+        "guzzlehttp/guzzle": "^7.2",
+        "phanan/cascading-config": "^2.0"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",

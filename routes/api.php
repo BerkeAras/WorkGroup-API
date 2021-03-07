@@ -36,6 +36,14 @@ $api->version('v1', function ($api) {
         'as' => 'api.auth.reset',
         'uses' => 'App\Http\Controllers\Auth\AuthController@postReset',
     ]);
+    $api->post('/auth/reset/2', [
+        'as' => 'api.auth.reset_2',
+        'uses' => 'App\Http\Controllers\Auth\AuthController@postReset2',
+    ]);
+    $api->post('/auth/reset/3', [
+        'as' => 'api.auth.reset_3',
+        'uses' => 'App\Http\Controllers\Auth\AuthController@postReset3',
+    ]);
     $api->get('/sidebar/popular', [
         'as' => 'api.sidebar.popular',
         'uses' => 'App\Http\Controllers\SidebarController@popular',
@@ -43,6 +51,10 @@ $api->version('v1', function ($api) {
     $api->post('/content/createPost', [
         'as' => 'api.content.createPost',
         'uses' => 'App\Http\Controllers\ContentController@createPost',
+    ]);
+    $api->get('/content/getPosts', [
+        'as' => 'api.content.getPosts',
+        'uses' => 'App\Http\Controllers\ContentController@getPosts',
     ]);
 
 

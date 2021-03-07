@@ -59,7 +59,9 @@ $app = new Laravel\Lumen\Application(
     realpath(__DIR__.'/../')
 );
 
-$app->withFacades();
+$app->withFacades(true, [
+    'Illuminate\Support\Facades\Mail' => 'Mail',
+]);
 
 $app->withEloquent();
 
@@ -126,13 +128,12 @@ $app->register(Zeek\LumenDingoAdapter\Providers\LumenDingoAdapterServiceProvider
 $app->register(Flipbox\LumenGenerator\LumenGeneratorServiceProvider::class);
 $app->register(Widnyana\LDRoutesList\CommandServiceProvider::class);
 
-// Email Provider
-$app->register(Illuminate\Mail\MailServiceProvider::class);
-$app->configure('mail');
-$app->alias('mailer', Illuminate\Mail\Mailer::class);
-$app->alias('mailer', Illuminate\Contracts\Mail\Mailer::class);
-$app->alias('mailer', Illuminate\Contracts\Mail\MailQueue::class);
+// ENV
+$app->register(PhanAn\CascadingConfig\CascadingConfigServiceProvider::class);
 
+// Email Provider
+$app->register(\Illuminate\Mail\MailServiceProvider::class);
+$app->configure('mail');
 
 /*
 |--------------------------------------------------------------------------
