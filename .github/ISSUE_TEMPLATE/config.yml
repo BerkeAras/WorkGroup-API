@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🐜 Bug report
+    url: https://github.com/BerkeAras/WorkGroup/issues/new?assignees=&labels=bug&template=bug_report.md&title=%5BBUG%5D%3A+
+    about: 'If something is not working as excepted'
+  - name: 🚀 Feature request
+    url: https://github.com/BerkeAras/WorkGroup/issues/new?assignees=&labels=feature+request&template=feature_request.md&title=%5BFEAT%5D%3A+
+    about: 'If you want to add something new.'
