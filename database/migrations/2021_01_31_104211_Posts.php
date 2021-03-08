@@ -21,6 +21,22 @@ class Posts extends Migration
             $table->integer('status');
             $table->timestamps();
         });
+
+        Schema::create('post_likes', function (Blueprint $table) {
+            $table->increments('id');
+            $table->integer('post_id');
+            $table->integer('user_id');
+            $table->timestamps();
+        });
+
+        Schema::create('post_comments', function (Blueprint $table) {
+            $table->increments('id');
+            $table->integer('post_id');
+            $table->integer('user_id');
+            $table->integer('parent_id');
+            $table->longText('comment_content')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**
@@ -31,5 +47,7 @@ class Posts extends Migration
     public function down()
     {
         Schema::drop('posts');
+        Schema::drop('post_likes');
+        Schema::drop('post_comments');
     }
 }

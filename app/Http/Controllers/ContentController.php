@@ -84,18 +84,149 @@ class ContentController extends Controller
             } else {
                 $page = 1;
             }
-            $results_per_page = 10;
+            $results_per_page = 30;
             $start_from = ($page-1) * $results_per_page;
 
             $posts = DB::table('posts')
                 ->join('users', 'users.id', '=', 'posts.user_id')
-                ->select('posts.*', 'users.name')
+                ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
                 ->orderByRaw('posts.id DESC')
                 ->limit($results_per_page)
                 ->offset($start_from)
-                ->get();
+                ->get()
+                ->toArray();
     
+            foreach ($posts as $post) {
+
+                $likes = DB::table('post_likes')
+                ->where("post_id", $post->id)
+                ->get()
+                ->count();
+                
+                $comments = DB::table('post_comments')
+                ->where("post_id", $post->id)
+                ->get()
+                ->count();
+                
+                $has_liked = DB::table('post_likes')
+                ->where("post_id", $post->id)
+                ->where("user_id", json_decode(JWTAuth::parseToken()->authenticate(), true)["id"])
+                ->get()
+                ->count();
+
+                if ($has_liked == 0) {
+                    $post->hasLiked = "";
+                } else {
+                    $post->hasLiked = "liked";
+                }
+
+                $post->likes = $likes;
+                $post->comments = $comments;
+            }
+
             return response()->json($posts);
+
+        }
+
+    }
+
+    public function getLikes(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            if (!isset($request->only('id')["id"])) {
+                return 0;
+            }
+
+            $likes = DB::table('post_likes')
+                ->where("post_id", $request->only('id')["id"])
+                ->get()
+                ->count();
+    
+            return $likes;
+
+        }
+
+    }
+    
+    public function likePost(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            if (!isset($request->only('id')["id"])) {
+                return "unliked";
+            }
+
+            $likes = DB::table('post_likes')
+                ->where("post_id", $request->only('id')["id"])
+                ->where("user_id", json_decode(JWTAuth::parseToken()->authenticate(), true)["id"])
+                ->get()
+                ->count();
+
+            if ($likes == 0) {
+                DB::table('post_likes')
+                    ->insert(
+                        [
+                            'post_id' => $request->only('id')["id"],
+                            'user_id' => json_decode(JWTAuth::parseToken()->authenticate(), true)["id"]
+                        ]
+                    );
+
+                return "liked";
+            } elseif ($likes == 1) {
+                DB::table('post_likes')
+                    ->where("post_id", $request->only('id')["id"])
+                    ->where("user_id", json_decode(JWTAuth::parseToken()->authenticate(), true)["id"])
+                    ->delete();
+
+                return "unliked";
+            }
+
+        }
+
+    }
+
+    public function getComments(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            if (!isset($request->only('id')["id"])) {
+                return 0;
+            }
+
+            $comments = DB::table('post_comments')
+                ->join('users', 'users.id', '=', 'post_comments.user_id')
+                ->select('post_comments.*', 'users.name', 'users.avatar', 'users.email')
+                ->orderByRaw('post_comments.id DESC')
+                ->where("post_comments.post_id", $request->only('id'))
+                ->get()
+                ->toArray();
+
+            return response()->json($comments);
+
+        }
+
+    }
+
+    public function createComment(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+            $content =  $request->only('content')["content"];
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+            $created_at = date('Y-m-d H:i:s', time());
+            $updated_at = date('Y-m-d H:i:s', time());
+            $post_id = $request->only('post_id')["post_id"];
+
+            $content = str_replace('<br>', '{{BR}}', $content);
+            $content = preg_replace('/<[^>]*>/', '', $content);
+            $content = str_replace('{{BR}}', '<br>', $content);
+            
+            if (DB::insert('insert into post_comments (user_id, post_id, comment_content, created_at, updated_at) values (?, ?, ?, ?, ?)', [$user_id, $post_id, $content, $created_at, $updated_at])) {
+
+                return 1;
+            } else {
+                return 0;
+            }
 
         }
 

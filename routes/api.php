@@ -56,6 +56,22 @@ $api->version('v1', function ($api) {
         'as' => 'api.content.getPosts',
         'uses' => 'App\Http\Controllers\ContentController@getPosts',
     ]);
+    $api->get('/content/getLikes', [
+        'as' => 'api.content.getLikes',
+        'uses' => 'App\Http\Controllers\ContentController@getLikes',
+    ]);
+    $api->post('/content/likePost', [
+        'as' => 'api.content.likePost',
+        'uses' => 'App\Http\Controllers\ContentController@likePost',
+    ]);
+    $api->get('/content/getComments', [
+        'as' => 'api.content.getComments',
+        'uses' => 'App\Http\Controllers\ContentController@getComments',
+    ]);
+    $api->post('/content/createComment', [
+        'as' => 'api.content.createComment',
+        'uses' => 'App\Http\Controllers\ContentController@createComment',
+    ]);
 
 
     // API
