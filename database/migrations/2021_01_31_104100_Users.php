@@ -17,9 +17,22 @@ class Users extends Migration
             $table->increments('id');
             $table->string('name');
             $table->string('avatar');
+            $table->string('banner');
             $table->string('email')->unique();
             $table->string('password', 60);
             $table->rememberToken();
+            $table->timestamps();
+        });
+        Schema::create('user_information', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('user_id');
+            $table->string('user_slogan');
+            $table->string('user_country');
+            $table->string('user_city');
+            $table->string('user_street');
+            $table->string('user_department');
+            $table->string('user_birthday');
+            $table->string('user_phone');
             $table->timestamps();
         });
     }
@@ -32,5 +45,6 @@ class Users extends Migration
     public function down()
     {
         Schema::drop('users');
+        Schema::drop('user_information');
     }
 }

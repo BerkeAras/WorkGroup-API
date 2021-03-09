@@ -72,6 +72,22 @@ $api->version('v1', function ($api) {
         'as' => 'api.content.createComment',
         'uses' => 'App\Http\Controllers\ContentController@createComment',
     ]);
+    $api->get('/user/getBanner', [
+        'as' => 'api.user.getBanner',
+        'uses' => 'App\Http\Controllers\UserController@getBanner',
+    ]);
+    $api->post('/user/uploadBanner', [
+        'as' => 'api.user.uploadBanner',
+        'uses' => 'App\Http\Controllers\UserController@uploadBanner',
+    ]);
+    $api->post('/user/uploadAvatar', [
+        'as' => 'api.user.uploadAvatar',
+        'uses' => 'App\Http\Controllers\UserController@uploadAvatar',
+    ]);
+    $api->post('/user/setupUser', [
+        'as' => 'api.user.setupUser',
+        'uses' => 'App\Http\Controllers\UserController@setupUser',
+    ]);
 
 
     // API

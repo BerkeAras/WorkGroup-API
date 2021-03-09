@@ -79,6 +79,8 @@ class ContentController extends Controller
 
         if (JWTAuth::parseToken()->authenticate()) {
 
+            DB::enableQueryLog(); 
+
             if (isset($request->only('from')["from"])) {
                 $page = $request->only('from')["from"];
             } else {
@@ -100,18 +102,14 @@ class ContentController extends Controller
 
                 $likes = DB::table('post_likes')
                 ->where("post_id", $post->id)
-                ->get()
                 ->count();
-                
-                $comments = DB::table('post_comments')
-                ->where("post_id", $post->id)
-                ->get()
-                ->count();
+
+                $comments = DB::select("SELECT * FROM post_comments WHERE post_id = '$post->id'");
+                $comments = count($comments);
                 
                 $has_liked = DB::table('post_likes')
                 ->where("post_id", $post->id)
                 ->where("user_id", json_decode(JWTAuth::parseToken()->authenticate(), true)["id"])
-                ->get()
                 ->count();
 
                 if ($has_liked == 0) {
@@ -220,7 +218,7 @@ class ContentController extends Controller
             $content = str_replace('<br>', '{{BR}}', $content);
             $content = preg_replace('/<[^>]*>/', '', $content);
             $content = str_replace('{{BR}}', '<br>', $content);
-            
+
             if (DB::insert('insert into post_comments (user_id, post_id, comment_content, created_at, updated_at) values (?, ?, ?, ?, ?)', [$user_id, $post_id, $content, $created_at, $updated_at])) {
 
                 return 1;
