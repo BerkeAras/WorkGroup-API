@@ -22,7 +22,7 @@ class UserController extends Controller
                 $email = $request->only('email')["email"];
 
                 $banner = DB::table('users')
-                    ->select('banner', 'banner')
+                    ->select('banner', 'avatar')
                     ->where('email', $email)
                     ->get();
         
