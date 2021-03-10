@@ -195,22 +195,61 @@ class UserController extends Controller
             $created_at = date('Y-m-d H:i:s', time());
             $updated_at = date('Y-m-d H:i:s', time());
 
-            DB::insert('insert into user_information (user_id, user_slogan, user_country, user_city, user_street, user_department, user_birthday, user_phone, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                $user_id,
-                $slogan,
-                $country,
-                $city,
-                $street,
-                $department,
-                $birthday,
-                $phone,
-                $created_at,
-                $updated_at
-            ]);
+            $user_information = DB::table('user_information')
+                ->select('*')
+                ->where('user_id', $user_id)
+                ->get()
+                ->count();
+
+            if ($user_information == 0) {
+                DB::insert('insert into user_information (user_id, user_slogan, user_country, user_city, user_street, user_department, user_birthday, user_phone, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                    $user_id,
+                    $slogan,
+                    $country,
+                    $city,
+                    $street,
+                    $department,
+                    $birthday,
+                    $phone,
+                    $created_at,
+                    $updated_at
+                ]);
+            } else {
+                DB::table('user_information')
+                    ->where('user_id', $user_id)
+                    ->update([
+                        'user_id' => $user_id,
+                        'user_slogan' => $slogan,
+                        'user_country' => $country,
+                        'user_city' => $city,
+                        'user_street' => $street,
+                        'user_department' => $department,
+                        'user_birthday' => $birthday,
+                        'user_phone' => $phone,
+                        'updated_at' => $updated_at
+                    ]);
+            }
 
             return response([
                 'message' => 'Setup successfully created'
             ]);
+
+        }
+
+    }
+
+    public function getUserInformation(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+
+            $user_information = DB::table('user_information')
+                ->select('*')
+                ->where('user_id', $user_id)
+                ->get();
+    
+            return response()->json($user_information);
 
         }
 
