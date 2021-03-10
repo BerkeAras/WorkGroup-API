@@ -88,6 +88,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.user.setupUser',
         'uses' => 'App\Http\Controllers\UserController@setupUser',
     ]);
+    $api->get('/user/getUserInformation', [
+        'as' => 'api.user.getUserInformation',
+        'uses' => 'App\Http\Controllers\UserController@getUserInformation',
+    ]);
 
 
     // API
