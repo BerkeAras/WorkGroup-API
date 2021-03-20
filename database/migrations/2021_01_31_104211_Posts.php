@@ -14,6 +14,8 @@ class Posts extends Migration
     public function up()
     {
         Schema::create('posts', function (Blueprint $table) {
+            $table->charset = 'utf8mb4';
+            $table->collation = 'utf8mb4_unicode_ci';
             $table->increments('id');
             $table->integer('user_id');
             $table->integer('group_id');
