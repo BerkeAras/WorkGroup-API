@@ -92,6 +92,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.user.getUserInformation',
         'uses' => 'App\Http\Controllers\UserController@getUserInformation',
     ]);
+    $api->get('/search', [
+        'as' => 'api.search.searchQuery',
+        'uses' => 'App\Http\Controllers\SearchController@searchQuery',
+    ]);
 
 
     // API

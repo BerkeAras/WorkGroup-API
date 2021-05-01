@@ -15,12 +15,6 @@ class SidebarController extends Controller
 {
     // Returns the most popular topics
     public function popular(Request $request) {
-        /*
-            SELECT COUNT(CustomerID), Country
-            FROM Customers
-            GROUP BY Country;
-        */
-
         
         if (JWTAuth::parseToken()->authenticate()) {
             $topics = DB::table('post_topics')
