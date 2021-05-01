@@ -23,21 +23,38 @@ class SearchController extends Controller
                 $resultsArray = array();
 
                 $searchUsers = DB::table('users')
-                    ->select('id', 'email', 'name')
-                    ->where('email', 'like', "%$searchQuery%")
-                    ->orWhere('name', 'like', "%$searchQuery%")
-                    ->orWhere('id', $searchQuery)
+                    ->leftJoin('user_information', 'users.id', '=', 'user_information.user_id')
+                    ->select('users.id', 'users.email', 'users.name', 'user_information.user_department')    
+                    ->where('users.email', 'like', "%$searchQuery%")
+                    ->orWhere('users.email', 'SOUNDS LIKE', $searchQuery)
+                    ->orWhere('users.name', 'like', "%$searchQuery%")
+                    ->orWhere('users.name', 'SOUNDS LIKE', $searchQuery)
+                    ->orWhere('user_information.user_department', 'like', "%$searchQuery%")
+                    ->orWhere('user_information.user_department', 'SOUNDS LIKE', $searchQuery)
+                    ->orWhere('users.id', $searchQuery)
                     ->limit(4)
                     ->get();
                 array_push($resultsArray, $searchUsers);
                 
-                $searchTopics = DB::table('post_topics')
-                    ->select('id', 'post_id', 'topic')
-                    ->where('topic', 'like', "%$searchQuery%")
-                    ->groupBy('topic')
-                    ->limit(4)
-                    ->get();
-                array_push($resultsArray, $searchTopics);
+                if ($searchQuery[0] == "#" && !preg_match('/\s/',$searchQuery)) {
+                    // Hashtag
+                    $searchTopics = DB::table('post_topics')
+                        ->select('id', 'post_id', 'topic')
+                        ->where('topic', str_replace("#", "", $searchQuery))
+                        ->groupBy('topic')
+                        ->limit(4)
+                        ->get();
+                    array_push($resultsArray, $searchTopics);
+                } else {
+                    $searchTopics = DB::table('post_topics')
+                        ->select('id', 'post_id', 'topic')
+                        ->where('topic', 'LIKE', "%$searchQuery%")
+                        ->groupBy('topic')
+                        ->limit(4)
+                        ->get();
+                    array_push($resultsArray, $searchTopics);
+                }
+
                 
         
                 return response()->json($resultsArray);
