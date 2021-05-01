@@ -44,10 +44,14 @@ $api->version('v1', function ($api) {
         'as' => 'api.auth.reset_3',
         'uses' => 'App\Http\Controllers\Auth\AuthController@postReset3',
     ]);
+
+    // Sidebar
     $api->get('/sidebar/popular', [
         'as' => 'api.sidebar.popular',
         'uses' => 'App\Http\Controllers\SidebarController@popular',
     ]);
+
+    // Content
     $api->post('/content/createPost', [
         'as' => 'api.content.createPost',
         'uses' => 'App\Http\Controllers\ContentController@createPost',
@@ -72,6 +76,8 @@ $api->version('v1', function ($api) {
         'as' => 'api.content.createComment',
         'uses' => 'App\Http\Controllers\ContentController@createComment',
     ]);
+
+    // User
     $api->get('/user/getBanner', [
         'as' => 'api.user.getBanner',
         'uses' => 'App\Http\Controllers\UserController@getBanner',
@@ -92,16 +98,16 @@ $api->version('v1', function ($api) {
         'as' => 'api.user.getUserInformation',
         'uses' => 'App\Http\Controllers\UserController@getUserInformation',
     ]);
+
+    // Search
     $api->get('/search', [
         'as' => 'api.search.searchQuery',
         'uses' => 'App\Http\Controllers\SearchController@searchQuery',
     ]);
 
-
     // API
     $api->group([
         'namespace' => 'App\Http\Controllers',
-        'middleware' => 'api.auth',
     ], function ($api) {
         $api->get('/', 'APIController@getIndex');
     });
