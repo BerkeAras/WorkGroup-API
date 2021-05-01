@@ -18,7 +18,7 @@ class Users extends Migration
             $table->string('name');
             $table->string('avatar');
             $table->string('banner');
-            $table->string('email')->unique();
+            $table->string('email',128)->unique();
             $table->string('password', 60);
             $table->rememberToken();
             $table->timestamps();
