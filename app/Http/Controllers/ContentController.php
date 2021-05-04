@@ -120,6 +120,8 @@ class ContentController extends Controller
 
                 $post->likes = $likes;
                 $post->comments = $comments;
+                $post->created_at = date("m/d/Y H:i:s", strtotime($post->created_at));
+                $post->updated_at = date("m/d/Y H:i:s", strtotime($post->updated_at));
             }
 
             return response()->json($posts);
@@ -199,6 +201,11 @@ class ContentController extends Controller
                 ->where("post_comments.post_id", $request->only('id'))
                 ->get()
                 ->toArray();
+
+            foreach ($comments as $comment) {
+                $comment->created_at = date("m/d/Y H:i:s", strtotime($comment->created_at));
+                $comment->updated_at = date("m/d/Y H:i:s", strtotime($comment->updated_at));
+            }
 
             return response()->json($comments);
 

@@ -242,13 +242,24 @@ class UserController extends Controller
 
         if (JWTAuth::parseToken()->authenticate()) {
 
-            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+            if (isset($request->only('email')["email"])) {
+                $user_id = $request->only('email')["email"];
 
-            $user_information = DB::table('user_information')
-                ->select('*')
-                ->where('user_id', $user_id)
-                ->get();
-    
+                $user_information = DB::table('user_information')
+                    ->join('users', 'users.id', '=', 'user_information.user_id')
+                    ->select('users.name', 'users.avatar', 'users.banner', 'users.email', 'user_information.user_slogan', 'user_information.user_country', 'user_information.user_city', 'user_information.user_street', 'user_information.user_department', 'user_information.user_birthday', 'user_information.user_phone')
+                    ->where('users.email', $user_id)
+                    ->get();
+            } else {
+                $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+                
+                $user_information = DB::table('user_information')
+                    ->join('users', 'users.id', '=', 'user_information.user_id')
+                    ->select('users.id', 'users.name', 'users.avatar', 'users.banner', 'users.email', 'user_information.user_slogan', 'user_information.user_country', 'user_information.user_city', 'user_information.user_street', 'user_information.user_department', 'user_information.user_birthday', 'user_information.user_phone')
+                    ->where('users.id', $user_id)
+                    ->get();
+            }
+            
             return response()->json($user_information);
 
         }
