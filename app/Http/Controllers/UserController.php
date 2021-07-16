@@ -266,4 +266,34 @@ class UserController extends Controller
 
     }
 
+    public function storeCookieChoice(Request $request) {
+        
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+
+            $cookie_choice = $request->only('cookie_choice')["cookie_choice"];
+
+            if ($cookie_choice == "true" || $cookie_choice == "technical") {
+
+                DB::table('users')
+                    ->where('id', $user_id)
+                    ->update(['cookie_choice' => $cookie_choice]);
+
+                return response([
+                    'status' => 'success'
+                ]);
+
+            } else {
+                return response([
+                    'status' => 'error',
+                    'message' => 'Could not store cookie choice. ' . $cookie_choice . " is not allowed!"
+                ]);
+            }
+
+
+        }
+
+    }
+
 }

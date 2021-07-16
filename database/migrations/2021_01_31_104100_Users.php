@@ -20,6 +20,7 @@ class Users extends Migration
             $table->string('banner');
             $table->string('email',128)->unique();
             $table->string('password', 60);
+            $table->string('cookie_choice');
             $table->rememberToken();
             $table->timestamps();
         });
