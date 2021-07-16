@@ -86,12 +86,19 @@ class ContentController extends Controller
             } else {
                 $page = 1;
             }
+
+            $user = "%";
+            if (isset($request->only('user')["user"])) {
+                $user = $request->only('user')["user"];
+            }
+
             $results_per_page = 30;
             $start_from = ($page-1) * $results_per_page;
 
             $posts = DB::table('posts')
                 ->join('users', 'users.id', '=', 'posts.user_id')
                 ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
+                ->where('users.email', 'LIKE', $user)
                 ->orderByRaw('posts.id DESC')
                 ->limit($results_per_page)
                 ->offset($start_from)
