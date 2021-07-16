@@ -98,6 +98,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.user.getUserInformation',
         'uses' => 'App\Http\Controllers\UserController@getUserInformation',
     ]);
+    $api->post('/user/storeCookieChoice', [
+        'as' => 'api.user.storeCookieChoice',
+        'uses' => 'App\Http\Controllers\UserController@storeCookieChoice',
+    ]);
 
     // Search
     $api->get('/search', [
