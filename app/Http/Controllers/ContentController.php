@@ -303,34 +303,57 @@ class ContentController extends Controller
                 $image_name = $_FILES["image"]["name"];
                 $image_tmp_name = $_FILES["image"]["tmp_name"];
                 $error = $_FILES["image"]["error"];
+                $size = $_FILES["image"]["size"];
+                $file_type = $_FILES['image']['type']; //returns the mimetype
 
-                if($error > 0){
+                // Check file size
+                if ($size > (env("MAX_UPLOAD_SIZE") * 1000000) || $size == 0) {
                     $response = array(
                         "status" => "error",
                         "error" => true,
-                        "message" => "Error uploading the file!"
+                        "message" => "File too big!"
                     );
                 } else {
-                    $random_name = "pi-" . rand(1000,1000000) . time() . "-" . $image_name;
-                    $upload_name = $upload_dir . strtolower($random_name);
-                    $upload_name = preg_replace('/\s+/', '-', $upload_name);
 
-                    if (move_uploaded_file($image_tmp_name , $upload_name)) {
-                        $response = array(
-                            "status" => "success",
-                            "error" => false,
-                            "message" => "File uploaded successfully",
-                            "url" => $upload_name,
-                            "original_url" => $image_name
-                        );
-                    } else {
+                    $allowed = array("image/jpeg", "image/jpg", "image/tiff", "image/gif", "image/png");
+                    if(!in_array($file_type, $allowed)) {
                         $response = array(
                             "status" => "error",
                             "error" => true,
                             "message" => "Error uploading the file!"
                         );
+                    } else {
+                        if($error > 0){
+                            $response = array(
+                                "status" => "error",
+                                "error" => true,
+                                "message" => "Error uploading the file!"
+                            );
+                        } else {
+                            $random_name = "pi-" . rand(1000,1000000) . time() . "-" . $image_name;
+                            $upload_name = $upload_dir . strtolower($random_name);
+                            $upload_name = preg_replace('/\s+/', '-', $upload_name);
+        
+                            if (move_uploaded_file($image_tmp_name , $upload_name)) {
+                                $response = array(
+                                    "status" => "success",
+                                    "error" => false,
+                                    "message" => "File uploaded successfully",
+                                    "url" => $upload_name,
+                                    "original_url" => $image_name
+                                );
+                            } else {
+                                $response = array(
+                                    "status" => "error",
+                                    "error" => true,
+                                    "message" => "Error uploading the file!"
+                                );
+                            }
+                        }
                     }
+
                 }
+
 
             } else {
                 $response = array(
@@ -365,34 +388,45 @@ class ContentController extends Controller
                 $file_name = $_FILES["file"]["name"];
                 $file_tmp_name = $_FILES["file"]["tmp_name"];
                 $error = $_FILES["file"]["error"];
+                $size = $_FILES["image"]["size"];
 
-                if($error > 0){
+                // Check file size
+                if ($size > (env("MAX_UPLOAD_SIZE") * 1000000) || $size == 0) {
                     $response = array(
                         "status" => "error",
                         "error" => true,
-                        "message" => "Error uploading the file!"
+                        "message" => "File too big!"
                     );
                 } else {
-                    $random_name = "file-" . rand(1000,1000000) . time() . "-" . $file_name;
-                    $upload_name = $upload_dir . strtolower($random_name);
-                    $upload_name = preg_replace('/\s+/', '-', $upload_name);
-
-                    if (move_uploaded_file($file_tmp_name , $upload_name)) {
-                        $response = array(
-                            "status" => "success",
-                            "error" => false,
-                            "message" => "File uploaded successfully",
-                            "url" => $upload_name,
-                            "original_url" => $file_name
-                        );
-                    } else {
+                    if($error > 0){
                         $response = array(
                             "status" => "error",
                             "error" => true,
                             "message" => "Error uploading the file!"
                         );
+                    } else {
+                        $random_name = "file-" . rand(1000,1000000) . time() . "-" . $file_name;
+                        $upload_name = $upload_dir . strtolower($random_name);
+                        $upload_name = preg_replace('/\s+/', '-', $upload_name);
+    
+                        if (move_uploaded_file($file_tmp_name , $upload_name)) {
+                            $response = array(
+                                "status" => "success",
+                                "error" => false,
+                                "message" => "File uploaded successfully",
+                                "url" => $upload_name,
+                                "original_url" => $file_name
+                            );
+                        } else {
+                            $response = array(
+                                "status" => "error",
+                                "error" => true,
+                                "message" => "Error uploading the file!"
+                            );
+                        }
                     }
                 }
+
 
             } else {
                 $response = array(
