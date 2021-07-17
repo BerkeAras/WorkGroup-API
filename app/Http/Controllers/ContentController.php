@@ -18,6 +18,7 @@ class ContentController extends Controller
 
         if (JWTAuth::parseToken()->authenticate()) {
             $content =  $request->only('content')["content"];
+            $content = trim($content);
             $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
             $created_at = date('Y-m-d H:i:s', time());
             $updated_at = date('Y-m-d H:i:s', time());
@@ -265,6 +266,7 @@ class ContentController extends Controller
 
         if (JWTAuth::parseToken()->authenticate()) {
             $content =  $request->only('content')["content"];
+            $content = trim($content);
             $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
             $created_at = date('Y-m-d H:i:s', time());
             $updated_at = date('Y-m-d H:i:s', time());
