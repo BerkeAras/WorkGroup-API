@@ -76,6 +76,14 @@ $api->version('v1', function ($api) {
         'as' => 'api.content.createComment',
         'uses' => 'App\Http\Controllers\ContentController@createComment',
     ]);
+    $api->post('/content/uploadImage', [
+        'as' => 'api.content.uploadImage',
+        'uses' => 'App\Http\Controllers\ContentController@uploadImage',
+    ]);
+    $api->post('/content/uploadFile', [
+        'as' => 'api.content.uploadFile',
+        'uses' => 'App\Http\Controllers\ContentController@uploadFile',
+    ]);
 
     // User
     $api->get('/user/getBanner', [
