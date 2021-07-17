@@ -40,6 +40,13 @@ class AuthController extends Controller
             return $this->onJwtGenerationError();
         }
 
+        DB::table("users")
+            ->where("email", $request->only('email')["email"])
+            ->update([
+                'user_online' => "1",
+                'user_last_online' => date('Y-m-d H:i:s', time())
+            ]);
+
         // All good so return the token
         return $this->onAuthorized($token);
     }
@@ -393,4 +400,25 @@ class AuthController extends Controller
         }
 
     } 
+
+    public function activity(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+
+            DB::table("users")
+                ->where("id", $user_id)
+                ->update([
+                    'user_online' => "1",
+                    'user_last_online' => date('Y-m-d H:i:s', time())
+                ]);
+
+            return response([
+                'message' => 'Activity updated'
+            ]);
+
+        }
+
+    }
 }
