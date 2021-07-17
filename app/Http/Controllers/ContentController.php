@@ -24,8 +24,6 @@ class ContentController extends Controller
             $group_id = 0;
             $status = 1;
 
-
-
             // Hashtags
 
             function get_hashtags($string, $str = 1) {
@@ -48,10 +46,43 @@ class ContentController extends Controller
                 return $keywords;
             }
 
-            if (DB::insert('insert into posts (user_id, group_id, post_content, status, created_at, updated_at) values (?, ?, ?, ?, ?, ?)', [$user_id, $group_id, $content, $status, $created_at, $updated_at])) {
+            $insertedPost = DB::table('posts')->insertGetId(
+                [
+                    'user_id' => $user_id,
+                    'group_id' => $group_id,
+                    'post_content' => $content,
+                    'status' => $status,
+                    'user_id' => $user_id,
+                    'created_at' => $created_at,
+                    'updated_at' => $updated_at,
+                ]
+            );
+
+            if ($insertedPost) {
                 
-                $column_id = DB::table('posts')->where([['user_id', '=', $user_id],['post_content', '=', $content]])->get();
-                $id = $column_id[0]->id;
+                $id = $insertedPost;
+
+                if ($request->only('images')["images"]) {
+
+                    $images = $request->only('images')["images"];
+                    $images = json_decode($images);
+
+                    foreach ($images as $image) {
+                        DB::insert('insert into post_images (post_id, post_image_url, created_at, updated_at) values (?, ?, ?, ?)', [$id, $image, $created_at, $updated_at]);
+                    }
+
+                }
+                
+                if ($request->only('files')["files"]) {
+
+                    $files = $request->only('files')["files"];
+                    $files = json_decode($files);
+
+                    foreach ($files as $file) {
+                        DB::insert('insert into post_files (post_id, post_file_original, post_file_url, created_at, updated_at) values (?, ?, ?, ?, ?)', [$id, $file[0], $file[1], $created_at, $updated_at]);
+                    }
+
+                }
 
                 $hashtagsArray = explode(',', get_hashtags($content));
                 if (count($hashtagsArray) > 0) {
@@ -110,9 +141,17 @@ class ContentController extends Controller
                 $likes = DB::table('post_likes')
                 ->where("post_id", $post->id)
                 ->count();
-
+                
                 $comments = DB::select("SELECT * FROM post_comments WHERE post_id = '$post->id'");
                 $comments = count($comments);
+
+                $images = DB::table('post_images')
+                ->where("post_id", $post->id)
+                ->get();
+
+                $files = DB::table('post_files')
+                ->where("post_id", $post->id)
+                ->get();
                 
                 $has_liked = DB::table('post_likes')
                 ->where("post_id", $post->id)
@@ -129,6 +168,8 @@ class ContentController extends Controller
                 $post->comments = $comments;
                 $post->created_at = date("m/d/Y H:i:s", strtotime($post->created_at));
                 $post->updated_at = date("m/d/Y H:i:s", strtotime($post->updated_at));
+                $post->images = $images;
+                $post->files = $files;
             }
 
             return response()->json($posts);
@@ -239,6 +280,129 @@ class ContentController extends Controller
             } else {
                 return 0;
             }
+
+        }
+
+    }
+
+    public function uploadImage(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+
+            $response = array();
+            $upload_dir = './static/';
+
+            if (!file_exists($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+
+            if ($_FILES["image"]) {
+
+                $image_name = $_FILES["image"]["name"];
+                $image_tmp_name = $_FILES["image"]["tmp_name"];
+                $error = $_FILES["image"]["error"];
+
+                if($error > 0){
+                    $response = array(
+                        "status" => "error",
+                        "error" => true,
+                        "message" => "Error uploading the file!"
+                    );
+                } else {
+                    $random_name = "pi-" . rand(1000,1000000) . time() . "-" . $image_name;
+                    $upload_name = $upload_dir . strtolower($random_name);
+                    $upload_name = preg_replace('/\s+/', '-', $upload_name);
+
+                    if (move_uploaded_file($image_tmp_name , $upload_name)) {
+                        $response = array(
+                            "status" => "success",
+                            "error" => false,
+                            "message" => "File uploaded successfully",
+                            "url" => $upload_name,
+                            "original_url" => $image_name
+                        );
+                    } else {
+                        $response = array(
+                            "status" => "error",
+                            "error" => true,
+                            "message" => "Error uploading the file!"
+                        );
+                    }
+                }
+
+            } else {
+                $response = array(
+                    "status" => "error",
+                    "error" => true,
+                    "message" => "No file was sent!"
+                );
+            }
+
+            return $response;
+
+        }
+
+    }
+
+
+    public function uploadFile(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+
+            $response = array();
+            $upload_dir = './static/files/';
+
+            if (!file_exists($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+
+            if ($_FILES["file"]) {
+
+                $file_name = $_FILES["file"]["name"];
+                $file_tmp_name = $_FILES["file"]["tmp_name"];
+                $error = $_FILES["file"]["error"];
+
+                if($error > 0){
+                    $response = array(
+                        "status" => "error",
+                        "error" => true,
+                        "message" => "Error uploading the file!"
+                    );
+                } else {
+                    $random_name = "file-" . rand(1000,1000000) . time() . "-" . $file_name;
+                    $upload_name = $upload_dir . strtolower($random_name);
+                    $upload_name = preg_replace('/\s+/', '-', $upload_name);
+
+                    if (move_uploaded_file($file_tmp_name , $upload_name)) {
+                        $response = array(
+                            "status" => "success",
+                            "error" => false,
+                            "message" => "File uploaded successfully",
+                            "url" => $upload_name,
+                            "original_url" => $file_name
+                        );
+                    } else {
+                        $response = array(
+                            "status" => "error",
+                            "error" => true,
+                            "message" => "Error uploading the file!"
+                        );
+                    }
+                }
+
+            } else {
+                $response = array(
+                    "status" => "error",
+                    "error" => true,
+                    "message" => "No file was sent!"
+                );
+            }
+
+            return $response;
 
         }
 
