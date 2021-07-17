@@ -44,6 +44,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.auth.reset_3',
         'uses' => 'App\Http\Controllers\Auth\AuthController@postReset3',
     ]);
+    $api->post('/auth/activity', [
+        'as' => 'api.auth.activity',
+        'uses' => 'App\Http\Controllers\Auth\AuthController@activity',
+    ]);
 
     // Sidebar
     $api->get('/sidebar/popular', [
