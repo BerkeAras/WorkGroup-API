@@ -29,8 +29,10 @@ class SearchController extends Controller
                     ->orWhere('users.email', 'SOUNDS LIKE', $searchQuery)
                     ->orWhere('users.name', 'like', "%$searchQuery%")
                     ->orWhere('users.name', 'SOUNDS LIKE', $searchQuery)
+                    ->orWhereRaw('MATCH (users.name) AGAINST ("' . preg_replace('/(\w+)/', '+$1', $searchQuery) . '" IN BOOLEAN MODE)')
                     ->orWhere('user_information.user_department', 'like', "%$searchQuery%")
                     ->orWhere('user_information.user_department', 'SOUNDS LIKE', $searchQuery)
+                    ->orWhereRaw('MATCH (user_information.user_department) AGAINST ("' . preg_replace('/(\w+)/', '+$1', $searchQuery) . '" IN BOOLEAN MODE)')
                     ->orWhere('users.id', $searchQuery)
                     ->limit(4)
                     ->get();
