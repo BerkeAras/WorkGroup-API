@@ -443,4 +443,43 @@ class ContentController extends Controller
         }
 
     }
+
+    public function reportPost(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+            $postId =  $request->only('postId')["postId"];
+            $reportTypeValue =  $request->only('reportTypeValue')["reportTypeValue"];
+            $reportTextValue =  $request->only('reportTextValue')["reportTextValue"];
+            $created_at = date('Y-m-d H:i:s', time());
+            $updated_at = date('Y-m-d H:i:s', time());
+
+            $insertedPostReport = DB::table('post_reports')->insertGetId(
+                [
+                    'user_id' => $user_id,
+                    'post_id' => $postId,
+                    'report_reason' => $reportTypeValue,
+                    'report_text' => $reportTextValue,
+                    'created_at' => $created_at,
+                    'updated_at' => $updated_at,
+                ]
+            );
+
+            if ($insertedPostReport) {
+                return response([
+                    'error' => false,
+                    'message' => 'Post reported'
+                ]);
+            } else {
+                return response([
+                    'error' => true,
+                    'message' => 'Post could not be reported'
+                ]);
+            }
+
+        }
+
+    }
+
 }

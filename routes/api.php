@@ -88,6 +88,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.content.uploadFile',
         'uses' => 'App\Http\Controllers\ContentController@uploadFile',
     ]);
+    $api->post('/content/reportPost', [
+        'as' => 'api.content.reportPost',
+        'uses' => 'App\Http\Controllers\ContentController@reportPost',
+    ]);
 
     // User
     $api->get('/user/getBanner', [

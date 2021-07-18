@@ -54,6 +54,15 @@ class Posts extends Migration
             $table->string('post_file_url');
             $table->timestamps();
         });
+       
+        Schema::create('post_reports', function (Blueprint $table) {
+            $table->increments('id');
+            $table->integer('post_id');
+            $table->integer('user_id');
+            $table->string('report_reason');
+            $table->longText('report_text')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**
