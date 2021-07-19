@@ -12,6 +12,7 @@ use Illuminate\Http\Exception\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PasswordResetMail;
+use App\Mail\RegisterActivationMail;
 use Exception;
 class AuthController extends Controller
 {
@@ -232,16 +233,29 @@ class AuthController extends Controller
 
             $results = DB::select("SELECT * FROM users WHERE email = '$email'");
             if (count($results) == 0) {
+                $token = str_random(20) . md5($email);
+
                 DB::table('users')->insert([
                     'name' => $name,
                     'email' => $email,
                     'password' => app('hash')->make($password),
                     'remember_token' => str_random(10),
+                    'activation_token' => $token,
                 ]);
+
+                try {
+                    Mail::send(new RegisterActivationMail($email, env("APP_URL"), $token));
+                
+                    return response([
+                        'message' => 'Register success'
+                    ]);
+                } catch (Exception $ex) {
+                    // Debug via $ex->getMessage();
+                    return response([
+                        'message' => 'Register error'
+                    ]);
+                }
     
-                return response([
-                    'message' => 'Register success'
-                ]);
             } else {
                 return response([
                     'message' => 'User existing'
@@ -418,6 +432,65 @@ class AuthController extends Controller
                 'message' => 'Activity updated'
             ]);
 
+        }
+
+    }
+
+    public function checkActivation(Request $request) {
+
+        $email = $request->only('email')["email"];
+
+        if ($email) {
+            $user = DB::table("users")
+                ->where("email", $email)
+                ->where("account_activated", 1)
+                ->get();
+
+            if (count($user) == 1) {
+                return response([
+                    'message' => 'User activated'
+                ]);
+            } else {
+                return response([
+                    'message' => 'User not activated'
+                ]);
+            }
+        } else {
+            return response([
+                'message' => 'No email provided'
+            ]);
+        }
+
+    }
+
+    public function activate(Request $request) {
+
+        $token = $request->only('token')["token"];
+
+        if ($token) {
+
+            $updateUser = DB::table("users")
+                ->where("activation_token", $token)
+                ->update([
+                    'account_activated' => 1
+                ]);
+
+            if ($updateUser == 1) {
+                return response([
+                    'error' => false,
+                    'message' => 'User activated'
+                ]);
+            } else {
+                return response([
+                    'error' => true,
+                    'message' => 'Token invalid'
+                ]);
+            }
+        } else {
+            return response([
+                'error' => true,
+                'message' => 'No token provided'
+            ]);
         }
 
     }
