@@ -250,14 +250,18 @@ class UserController extends Controller
                     ->select('users.name', 'users.avatar', 'users.banner', 'users.email', 'users.user_online', 'users.user_last_online', 'user_information.user_slogan', 'user_information.user_country', 'user_information.user_city', 'user_information.user_street', 'user_information.user_department', 'user_information.user_birthday', 'user_information.user_phone')
                     ->where('users.email', $user_id)
                     ->get();
+                
 
-                $user_information[0]->time_diff = time() - strtotime($user_information[0]->user_last_online);
+                if (count($user_information) > 0) {
+                    $user_information[0]->time_diff = time() - strtotime($user_information[0]->user_last_online);
 
-                if ($user_information[0]->time_diff > 300) {
-                    // Inactive for 5 minutes
-                    $user_information[0]->user_online = 0;
+                    if ($user_information[0]->time_diff > 300) {
+                        // Inactive for 5 minutes
+                        $user_information[0]->user_online = 0;
+                    }
+                } else {
+                    $user_information = array("email" => $user_id);
                 }
-
             } else {
                 $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
                 
@@ -266,6 +270,11 @@ class UserController extends Controller
                     ->select('users.id', 'users.name', 'users.avatar', 'users.banner', 'users.email', 'users.user_online', 'users.user_last_online', 'user_information.user_slogan', 'user_information.user_country', 'user_information.user_city', 'user_information.user_street', 'user_information.user_department', 'user_information.user_birthday', 'user_information.user_phone')
                     ->where('users.id', $user_id)
                     ->get();
+
+                if (count($user_information) == 0) {
+                    $user_information = array();
+                }
+
             }
             
             return response()->json($user_information);
