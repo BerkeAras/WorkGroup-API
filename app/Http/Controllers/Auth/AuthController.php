@@ -241,6 +241,8 @@ class AuthController extends Controller
                     'password' => app('hash')->make($password),
                     'remember_token' => str_random(10),
                     'activation_token' => $token,
+                    'created_at' => date('Y-m-d H:i:s', time()),
+                    'updated_at' => date('Y-m-d H:i:s', time())
                 ]);
 
                 try {
