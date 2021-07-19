@@ -48,6 +48,14 @@ $api->version('v1', function ($api) {
         'as' => 'api.auth.activity',
         'uses' => 'App\Http\Controllers\Auth\AuthController@activity',
     ]);
+    $api->get('/auth/checkActivation', [
+        'as' => 'api.auth.checkActivation',
+        'uses' => 'App\Http\Controllers\Auth\AuthController@checkActivation',
+    ]);
+    $api->post('/auth/activate', [
+        'as' => 'api.auth.activate',
+        'uses' => 'App\Http\Controllers\Auth\AuthController@activate',
+    ]);
 
     // Sidebar
     $api->get('/sidebar/popular', [
