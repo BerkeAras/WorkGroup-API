@@ -204,7 +204,7 @@
           <tr>
             <td align="left" bgcolor="#ffffff" style="padding: 0 24px 24px 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;">
             <a href="{{ $workgroup_url }}/signup/activate/{{ $activation_token }}" style="display:inline-block;width:100%;margin: 0;margin-bottom:10px;font-size: 24px;border: 1px solid #1670bb;text-align: center;line-height: 45px;padding: 0;background: #2c85d0;color: white;text-decoration: none;">Confirm</a>
-            <small>Open this link in a new tab: {{ $workgroup_url }}/signup/activate/{{ $activation_token }}</small>
+            <small style="overflow-wrap: break-word;word-break: break-all;">Open this link in a new tab: {{ $workgroup_url }}/signup/activate/{{ $activation_token }}</small>
             </td>
           </tr>
           <!-- end copy -->
