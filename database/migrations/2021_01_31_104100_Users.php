@@ -20,6 +20,11 @@ class Users extends Migration
             $table->string('banner');
             $table->string('email',128)->unique();
             $table->string('password', 60);
+            $table->string('cookie_choice');
+            $table->boolean('account_activated')->default(false);
+            $table->string('activation_token', 255);
+            $table->boolean('user_online');
+            $table->datetime('user_last_online');
             $table->rememberToken();
             $table->timestamps();
         });

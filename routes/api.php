@@ -44,6 +44,18 @@ $api->version('v1', function ($api) {
         'as' => 'api.auth.reset_3',
         'uses' => 'App\Http\Controllers\Auth\AuthController@postReset3',
     ]);
+    $api->post('/auth/activity', [
+        'as' => 'api.auth.activity',
+        'uses' => 'App\Http\Controllers\Auth\AuthController@activity',
+    ]);
+    $api->get('/auth/checkActivation', [
+        'as' => 'api.auth.checkActivation',
+        'uses' => 'App\Http\Controllers\Auth\AuthController@checkActivation',
+    ]);
+    $api->post('/auth/activate', [
+        'as' => 'api.auth.activate',
+        'uses' => 'App\Http\Controllers\Auth\AuthController@activate',
+    ]);
 
     // Sidebar
     $api->get('/sidebar/popular', [
@@ -76,6 +88,18 @@ $api->version('v1', function ($api) {
         'as' => 'api.content.createComment',
         'uses' => 'App\Http\Controllers\ContentController@createComment',
     ]);
+    $api->post('/content/uploadImage', [
+        'as' => 'api.content.uploadImage',
+        'uses' => 'App\Http\Controllers\ContentController@uploadImage',
+    ]);
+    $api->post('/content/uploadFile', [
+        'as' => 'api.content.uploadFile',
+        'uses' => 'App\Http\Controllers\ContentController@uploadFile',
+    ]);
+    $api->post('/content/reportPost', [
+        'as' => 'api.content.reportPost',
+        'uses' => 'App\Http\Controllers\ContentController@reportPost',
+    ]);
 
     // User
     $api->get('/user/getBanner', [
@@ -97,6 +121,10 @@ $api->version('v1', function ($api) {
     $api->get('/user/getUserInformation', [
         'as' => 'api.user.getUserInformation',
         'uses' => 'App\Http\Controllers\UserController@getUserInformation',
+    ]);
+    $api->post('/user/storeCookieChoice', [
+        'as' => 'api.user.storeCookieChoice',
+        'uses' => 'App\Http\Controllers\UserController@storeCookieChoice',
     ]);
 
     // Search

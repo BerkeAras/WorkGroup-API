@@ -32,6 +32,7 @@ class User extends Model implements
     protected $hidden = [
         'password',
         'remember_token',
+        'activation_token',
         'created_at',
         'updated_at',
     ];
