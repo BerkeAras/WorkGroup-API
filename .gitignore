@@ -2,3 +2,4 @@
 .env
 .idea
 /public/static
+.DS_Store
