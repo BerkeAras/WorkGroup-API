@@ -235,7 +235,7 @@ class AuthController extends Controller
             if (count($results) == 0) {
                 $token = str_random(20) . md5($email);
 
-                DB::table('users')->insert([
+                $user_id = DB::table('users')->insertGetId([
                     'name' => $name,
                     'email' => $email,
                     'password' => app('hash')->make($password),
@@ -243,6 +243,13 @@ class AuthController extends Controller
                     'activation_token' => $token,
                     'created_at' => date('Y-m-d H:i:s', time()),
                     'updated_at' => date('Y-m-d H:i:s', time())
+                ]);
+
+                DB::table('user_information')->insert([
+                    'user_id' => $user_id,
+                    'user_slogan' => "$name's Account!",
+                    "created_at" =>  date('Y-m-d H:i:s'),
+                    "updated_at" => date('Y-m-d H:i:s'),
                 ]);
 
                 try {

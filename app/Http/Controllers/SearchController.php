@@ -21,21 +21,14 @@ class SearchController extends Controller
 
                 $searchQuery = $request->only('query')["query"];
                 $resultsArray = array();
-
+                
                 $searchUsers = DB::table('users')
                     ->leftJoin('user_information', 'users.id', '=', 'user_information.user_id')
-                    ->select('users.id', 'users.email', 'users.name', 'user_information.user_department')    
-                    ->where('users.email', 'like', "%$searchQuery%")
-                    ->orWhere('users.email', 'SOUNDS LIKE', $searchQuery)
-                    ->orWhere('users.name', 'like', "%$searchQuery%")
-                    ->orWhere('users.name', 'SOUNDS LIKE', $searchQuery)
-                    ->orWhereRaw('MATCH (users.name) AGAINST ("' . preg_replace('/(\w+)/', '+$1', $searchQuery) . '" IN BOOLEAN MODE)')
-                    ->orWhere('user_information.user_department', 'like', "%$searchQuery%")
-                    ->orWhere('user_information.user_department', 'SOUNDS LIKE', $searchQuery)
-                    ->orWhereRaw('MATCH (user_information.user_department) AGAINST ("' . preg_replace('/(\w+)/', '+$1', $searchQuery) . '" IN BOOLEAN MODE)')
-                    ->orWhere('users.id', $searchQuery)
+                    ->whereRaw('MATCH (users.email, users.name) AGAINST (?)' , array($searchQuery))
+                    ->orWhereRaw('MATCH (user_information.user_department) AGAINST (?)' , array($searchQuery))
                     ->limit(4)
                     ->get();
+
                 array_push($resultsArray, $searchUsers);
                 
                 if ($searchQuery[0] == "#" && !preg_match('/\s/',$searchQuery)) {

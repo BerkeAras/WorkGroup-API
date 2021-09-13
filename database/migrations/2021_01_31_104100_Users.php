@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
 
 class Users extends Migration
 {
@@ -28,6 +29,7 @@ class Users extends Migration
             $table->rememberToken();
             $table->timestamps();
         });
+
         Schema::create('user_information', function (Blueprint $table) {
             $table->increments('id');
             $table->string('user_id');
@@ -40,6 +42,9 @@ class Users extends Migration
             $table->string('user_phone');
             $table->timestamps();
         });
+
+        DB::statement('ALTER TABLE users ADD FULLTEXT search(email, name)');
+        DB::statement('ALTER TABLE user_information ADD FULLTEXT search(user_department)');
     }
 
     /**
