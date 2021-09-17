@@ -390,7 +390,7 @@ class ContentController extends Controller
                 $file_name = $_FILES["file"]["name"];
                 $file_tmp_name = $_FILES["file"]["tmp_name"];
                 $error = $_FILES["file"]["error"];
-                $size = $_FILES["image"]["size"];
+                $size = $_FILES["file"]["size"];
 
                 // Check file size
                 if ($size > (env("MAX_UPLOAD_SIZE") * 1000000) || $size == 0) {

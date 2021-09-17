@@ -120,6 +120,7 @@ This is an example of how to list things you need to use the software and how to
     SESSION_DRIVER=file
     SESSION_LIFETIME=120
     QUEUE_DRIVER=sync
+    MAX_UPLOAD_SIZE=5
     ```
 5. Create Database Schema
    ```
