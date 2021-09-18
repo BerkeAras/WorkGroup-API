@@ -44,6 +44,15 @@ class Groups extends Migration
             $table->string('tag');
             $table->timestamps();
         });
+        Schema::create('group_requests', function (Blueprint $table) {
+            $table->charset = 'utf8mb4';
+            $table->collation = 'utf8mb4_unicode_ci';
+            $table->increments('id');
+            $table->integer('group_id');
+            $table->integer('user_id');
+            $table->enum('status',array('pending','approved','rejected','canceled'))->default('pending');
+            $table->timestamps();
+        });
 
         DB::statement('ALTER TABLE groups ADD FULLTEXT fulltext_index(group_title, group_description)');
         DB::statement('ALTER TABLE group_tags ADD FULLTEXT fulltext_index(tag)');

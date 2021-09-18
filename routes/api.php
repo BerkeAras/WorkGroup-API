@@ -132,6 +132,18 @@ $api->version('v1', function ($api) {
         'as' => 'api.group.getGroupInformation',
         'uses' => 'App\Http\Controllers\GroupController@getGroupInformation',
     ]);
+    $api->get('/group/getGroups', [
+        'as' => 'api.group.getGroups',
+        'uses' => 'App\Http\Controllers\GroupController@getGroups',
+    ]);
+    $api->get('/group/getTags', [
+        'as' => 'api.group.getTags',
+        'uses' => 'App\Http\Controllers\GroupController@getTags',
+    ]);
+    $api->post('/group/joinGroup', [
+        'as' => 'api.group.joinGroup',
+        'uses' => 'App\Http\Controllers\GroupController@joinGroup',
+    ]);
 
 
     // Search
