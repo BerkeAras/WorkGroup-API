@@ -144,6 +144,14 @@ $api->version('v1', function ($api) {
         'as' => 'api.group.joinGroup',
         'uses' => 'App\Http\Controllers\GroupController@joinGroup',
     ]);
+    $api->get('/group/getGroupMemberships', [
+        'as' => 'api.group.getGroupMemberships',
+        'uses' => 'App\Http\Controllers\GroupController@getGroupMemberships',
+    ]);
+    $api->post('/group/createGroup', [
+        'as' => 'api.group.createGroup',
+        'uses' => 'App\Http\Controllers\GroupController@createGroup',
+    ]);
 
 
     // Search
