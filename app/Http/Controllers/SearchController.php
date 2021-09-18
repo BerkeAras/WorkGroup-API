@@ -24,8 +24,9 @@ class SearchController extends Controller
                 
                 $searchUsers = DB::table('users')
                     ->leftJoin('user_information', 'users.id', '=', 'user_information.user_id')
-                    ->whereRaw('MATCH (users.email, users.name) AGAINST (?)' , array($searchQuery))
-                    ->orWhereRaw('MATCH (user_information.user_department) AGAINST (?)' , array($searchQuery))
+                    ->where('users.email', 'LIKE', "%$searchQuery%")
+                    ->orWhere('users.name', 'LIKE', "%$searchQuery%")
+                    ->orWhere('user_information.user_department', 'LIKE', "%$searchQuery%")
                     ->limit(4)
                     ->get();
 
@@ -33,8 +34,9 @@ class SearchController extends Controller
                 
                 $searchGroups = DB::table('groups')
                     ->leftJoin('group_tags', 'groups.id', '=', 'group_tags.group_id')
-                    ->whereRaw('MATCH (groups.group_title, groups.group_description) AGAINST (?)' , array($searchQuery))
-                    ->orWhereRaw('MATCH (group_tags.tag) AGAINST (?)' , array($searchQuery))
+                    ->where('groups.group_title', 'LIKE', "%$searchQuery%")
+                    ->orWhere('groups.group_description', 'LIKE', "%$searchQuery%")
+                    ->orWhere('group_tags.tag', 'LIKE', "%$searchQuery%")
                     ->limit(4)
                     ->get();
 
