@@ -31,6 +31,15 @@ class SearchController extends Controller
 
                 array_push($resultsArray, $searchUsers);
                 
+                $searchGroups = DB::table('groups')
+                    ->leftJoin('group_tags', 'groups.id', '=', 'group_tags.group_id')
+                    ->whereRaw('MATCH (groups.group_title, groups.group_description) AGAINST (?)' , array($searchQuery))
+                    ->orWhereRaw('MATCH (group_tags.tag) AGAINST (?)' , array($searchQuery))
+                    ->limit(4)
+                    ->get();
+
+                array_push($resultsArray, $searchGroups);
+                
                 if ($searchQuery[0] == "#" && !preg_match('/\s/',$searchQuery)) {
                     // Hashtag
                     $searchTopics = DB::table('post_topics')

@@ -126,6 +126,13 @@ $api->version('v1', function ($api) {
         'as' => 'api.user.storeCookieChoice',
         'uses' => 'App\Http\Controllers\UserController@storeCookieChoice',
     ]);
+    
+    // Group
+    $api->get('/group/getGroupInformation', [
+        'as' => 'api.group.getGroupInformation',
+        'uses' => 'App\Http\Controllers\GroupController@getGroupInformation',
+    ]);
+
 
     // Search
     $api->get('/search', [
