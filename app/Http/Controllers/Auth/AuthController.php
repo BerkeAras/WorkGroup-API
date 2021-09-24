@@ -177,6 +177,10 @@ class AuthController extends Controller
      */
     public function deleteInvalidate()
     {
+        $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+
+        DB::table('users')->where('id', $user_id)->update(['user_online'=>0]);
+
         $token = JWTAuth::parseToken();
         $token->invalidate();
         return response(['message' => 'Token invalidated']);
@@ -437,8 +441,12 @@ class AuthController extends Controller
                     'user_last_online' => date('Y-m-d H:i:s', time())
                 ]);
 
+            $token = JWTAuth::parseToken();
+            $newToken = $token->refresh();
+
             return response([
-                'message' => 'Activity updated'
+                'message' => 'Activity updated',
+                'token' => $newToken
             ]);
 
         }

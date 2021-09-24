@@ -152,6 +152,26 @@ $api->version('v1', function ($api) {
         'as' => 'api.group.createGroup',
         'uses' => 'App\Http\Controllers\GroupController@createGroup',
     ]);
+    $api->post('/group/editGroup', [
+        'as' => 'api.group.editGroup',
+        'uses' => 'App\Http\Controllers\GroupController@editGroup',
+    ]);
+    $api->get('/group/getRequest', [
+        'as' => 'api.group.getRequest',
+        'uses' => 'App\Http\Controllers\GroupController@getRequest',
+    ]);
+    $api->post('/group/updateRequestStatus', [
+        'as' => 'api.group.updateRequestStatus',
+        'uses' => 'App\Http\Controllers\GroupController@updateRequestStatus',
+    ]);
+    $api->get('/group/getAllRequests', [
+        'as' => 'api.group.getAllRequests',
+        'uses' => 'App\Http\Controllers\GroupController@getAllRequests',
+    ]);
+    $api->get('/group/getAllMembers', [
+        'as' => 'api.group.getAllMembers',
+        'uses' => 'App\Http\Controllers\GroupController@getAllMembers',
+    ]);
 
 
     // Search

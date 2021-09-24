@@ -50,7 +50,7 @@ class Groups extends Migration
             $table->increments('id');
             $table->integer('group_id');
             $table->integer('user_id');
-            $table->enum('status',array('pending','approved','rejected','canceled'))->default('pending');
+            $table->enum('status',array('pending','approved','rejected','cancelled'))->default('pending');
             $table->timestamps();
         });
 
