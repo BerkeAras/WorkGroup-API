@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PasswordResetMail;
 use App\Mail\RegisterActivationMail;
+use App\Http\Controllers\SettingsController;
 use Exception;
 class AuthController extends Controller
 {
@@ -23,33 +24,92 @@ class AuthController extends Controller
      */
     public function postLogin(Request $request)
     {
-        try {
-            $this->validatePostLoginRequest($request);
-        } catch (HttpResponseException $e) {
-            return $this->onBadRequest();
-        }
 
-        try {
-            // Attempt to verify the credentials and create a token for the user
-            if (!$token = JWTAuth::attempt(
-                $this->getCredentials($request)
-            )) {
-                return $this->onUnauthorized();
+        $settings = new SettingsController;
+        $authenticationMethod = $settings->getSettingValue('authentication_method');
+
+        $hasLdap = extension_loaded('ldap');
+
+        if ($authenticationMethod == "ldap" && $hasLdap == true) {
+
+            $ldap_host = $settings->getSettingValue('ldap_host');
+            $ldap_domain = $settings->getSettingValue('ldap_domain');
+            $ldap_username = $settings->getSettingValue('ldap_username');
+            $ldap_password = $settings->getSettingValue('ldap_password');
+            $ldap = ldap_connect("ldap://" . $ldap_host . "/");
+            $username = $request->only('email')["email"] . "@" . $ldap_domain;
+            $password = $request->only('password')["password"];
+
+            if (!$ldap) {
+                return $this->onBadRequest();
             }
-        } catch (JWTException $e) {
-            // Something went wrong whilst attempting to encode the token
-            return $this->onJwtGenerationError();
+
+            ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+            ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
+            $bind = @ldap_bind($ldap, $username, $password);
+            ldap_get_option($ldap, LDAP_OPT_DIAGNOSTIC_MESSAGE, $extended_error);    
+
+            if (!empty($extended_error)) {
+                return $this->onUnauthorized();
+            } elseif ($bind) {
+                // Determine the LDAP Path from Active Directory details
+                $base_dn = array(
+                    "CN=Users,DC=" . join(',DC=', explode('.', $ldap_domain)),
+                    "OU=Users,OU=People,DC=" . join(',DC=', explode('.', $ldap_domain))
+                );
+                $result = ldap_search(array($ldap, $ldap), $base_dn, "(cn=*)");
+                if (!$result)
+                    return $this->onUnauthorized();
+                else {
+                    
+                    try {
+                        // Attempt to verify the credentials and create a token for the user
+                        if (!$token = JWTAuth::attempt(
+                            $this->getCredentials($request)
+                        )) {
+                            return $this->onUnauthorized();
+                        }
+                    } catch (JWTException $e) {
+                        // Something went wrong whilst attempting to encode the token
+                        return $this->onJwtGenerationError();
+                    }
+
+                    return $this->onAuthorized($token);
+
+                }
+            }
+
+        } else {
+            
+            try {
+                $this->validatePostLoginRequest($request);
+            } catch (HttpResponseException $e) {
+                return $this->onBadRequest();
+            }
+    
+            try {
+                // Attempt to verify the credentials and create a token for the user
+                if (!$token = JWTAuth::attempt(
+                    $this->getCredentials($request)
+                )) {
+                    return $this->onUnauthorized();
+                }
+            } catch (JWTException $e) {
+                // Something went wrong whilst attempting to encode the token
+                return $this->onJwtGenerationError();
+            }
+    
+            DB::table("users")
+                ->where("email", $request->only('email')["email"])
+                ->update([
+                    'user_online' => "1",
+                    'user_last_online' => date('Y-m-d H:i:s', time())
+                ]);
+    
+            // All good so return the token
+            return $this->onAuthorized($token);
+
         }
-
-        DB::table("users")
-            ->where("email", $request->only('email')["email"])
-            ->update([
-                'user_online' => "1",
-                'user_last_online' => date('Y-m-d H:i:s', time())
-            ]);
-
-        // All good so return the token
-        return $this->onAuthorized($token);
     }
 
     /**

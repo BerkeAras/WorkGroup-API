@@ -13,7 +13,14 @@ class Settings extends Migration
      */
     public function up()
     {
-        //
+        Schema::create('app_settings', function (Blueprint $table) {
+            $table->charset = 'utf8mb4';
+            $table->collation = 'utf8mb4_unicode_ci';
+            $table->increments('id');
+            $table->string('setting_key')->unique();
+            $table->longText('setting_value')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**
@@ -23,6 +30,6 @@ class Settings extends Migration
      */
     public function down()
     {
-        //
+        Schema::drop('app_settings');
     }
 }

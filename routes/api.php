@@ -180,6 +180,13 @@ $api->version('v1', function ($api) {
         'uses' => 'App\Http\Controllers\SearchController@searchQuery',
     ]);
 
+
+    // Settings
+    $api->get('/getSettingValue', [
+        'as' => 'api.setting.getSettingValue',
+        'uses' => 'App\Http\Controllers\SettingsController@getSettingValue',
+    ]);
+
     // API
     $api->group([
         'namespace' => 'App\Http\Controllers',
