@@ -185,5 +185,6 @@ $api->version('v1', function ($api) {
         'namespace' => 'App\Http\Controllers',
     ], function ($api) {
         $api->get('/', 'APIController@getIndex');
+        $api->get('/check', 'APIController@checkConnection');
     });
 });
