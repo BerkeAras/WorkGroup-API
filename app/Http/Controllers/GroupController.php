@@ -339,6 +339,13 @@ class GroupController extends Controller
                     'updated_at' => date('Y-m-d H:i:s', time())
                 ]);
 
+                DB::table('group_tags')->insert([
+                    'group_id' => $groupId,
+                    'tag' => $title,
+                    'created_at' => date('Y-m-d H:i:s', time()),
+                    'updated_at' => date('Y-m-d H:i:s', time())
+                ]);
+
                 function get_hashtags($string, $str = 1) {
                     preg_match_all('/#(\w+)/',$string,$matches);
                     $i = 0;
