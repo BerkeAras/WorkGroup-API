@@ -152,6 +152,8 @@ class ContentController extends Controller
 
                     if ($isGroupMember == 0) {
                         return response()->json(array('status' => 'not_member'));
+                    } else {
+                        $group = $request->only('group')["group"];
                     }
                 } else {
                     $group = $request->only('group')["group"];
