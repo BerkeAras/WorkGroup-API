@@ -24,12 +24,23 @@ class SearchController extends Controller
                 
                 $searchUsers = DB::table('users')
                     ->leftJoin('user_information', 'users.id', '=', 'user_information.user_id')
-                    ->whereRaw('MATCH (users.email, users.name) AGAINST (?)' , array($searchQuery))
-                    ->orWhereRaw('MATCH (user_information.user_department) AGAINST (?)' , array($searchQuery))
+                    ->where('users.email', 'LIKE', "%$searchQuery%")
+                    ->orWhere('users.name', 'LIKE', "%$searchQuery%")
+                    ->orWhere('user_information.user_department', 'LIKE', "%$searchQuery%")
                     ->limit(4)
                     ->get();
 
                 array_push($resultsArray, $searchUsers);
+                
+                $searchGroups = DB::table('groups')
+                    ->leftJoin('group_tags', 'groups.id', '=', 'group_tags.group_id')
+                    ->where('groups.group_title', 'LIKE', "%$searchQuery%")
+                    ->orWhere('groups.group_description', 'LIKE', "%$searchQuery%")
+                    ->orWhere('group_tags.tag', 'LIKE', "%$searchQuery%")
+                    ->limit(4)
+                    ->get();
+
+                array_push($resultsArray, $searchGroups);
                 
                 if ($searchQuery[0] == "#" && !preg_match('/\s/',$searchQuery)) {
                     // Hashtag

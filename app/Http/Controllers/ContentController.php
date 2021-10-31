@@ -25,6 +25,16 @@ class ContentController extends Controller
             $group_id = 0;
             $status = 1;
 
+            if (isset($request->only('groupId')["groupId"])) {
+                $isGroupMember = DB::table('group_members')
+                    ->where('user_id', $user_id)
+                    ->count();
+
+                if ($isGroupMember > 0) {
+                    $group_id = $request->only('groupId')["groupId"];
+                }
+            }
+
             // Hashtags
 
             function get_hashtags($string, $str = 1) {
@@ -111,7 +121,9 @@ class ContentController extends Controller
 
         if (JWTAuth::parseToken()->authenticate()) {
 
-            DB::enableQueryLog(); 
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+
+            DB::enableQueryLog();
 
             if (isset($request->only('from')["from"])) {
                 $page = $request->only('from')["from"];
@@ -123,6 +135,31 @@ class ContentController extends Controller
             if (isset($request->only('user')["user"])) {
                 $user = $request->only('user')["user"];
             }
+            
+            $group = "%";
+            $isGroupMember = false;
+            if (isset($request->only('group')["group"])) {
+                $isGroupPrivate = DB::table('groups')
+                    ->where('id', $request->only('group')["group"])
+                    ->select('group_private')
+                    ->get()
+                    ->toArray();
+
+                if ($isGroupPrivate[0]->group_private == 1) {
+                    $isGroupMember = DB::table('group_members')
+                        ->where('user_id', $user_id)
+                        ->count();
+
+                    if ($isGroupMember == 0) {
+                        return response()->json(array('status' => 'not_member'));
+                    } else {
+                        $group = $request->only('group')["group"];
+                    }
+                } else {
+                    $group = $request->only('group')["group"];
+                }
+                
+            }
 
             $results_per_page = 30;
             $start_from = ($page-1) * $results_per_page;
@@ -131,6 +168,7 @@ class ContentController extends Controller
                 ->join('users', 'users.id', '=', 'posts.user_id')
                 ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
                 ->where('users.email', 'LIKE', $user)
+                ->where('posts.group_id', 'LIKE', $group)
                 ->orderByRaw('posts.id DESC')
                 ->limit($results_per_page)
                 ->offset($start_from)
@@ -139,21 +177,11 @@ class ContentController extends Controller
     
             foreach ($posts as $post) {
 
+                // Post Likes
                 $likes = DB::table('post_likes')
                 ->where("post_id", $post->id)
                 ->count();
-                
-                $comments = DB::select("SELECT * FROM post_comments WHERE post_id = '$post->id'");
-                $comments = count($comments);
 
-                $images = DB::table('post_images')
-                ->where("post_id", $post->id)
-                ->get();
-
-                $files = DB::table('post_files')
-                ->where("post_id", $post->id)
-                ->get();
-                
                 $has_liked = DB::table('post_likes')
                 ->where("post_id", $post->id)
                 ->where("user_id", json_decode(JWTAuth::parseToken()->authenticate(), true)["id"])
@@ -164,6 +192,29 @@ class ContentController extends Controller
                 } else {
                     $post->hasLiked = "liked";
                 }
+                
+                // Post Comments
+                $comments = DB::select("SELECT * FROM post_comments WHERE post_id = '$post->id'");
+                $comments = count($comments);
+
+                // Post Images
+                $images = DB::table('post_images')
+                ->where("post_id", $post->id)
+                ->get();
+
+                // Post Files
+                $files = DB::table('post_files')
+                ->where("post_id", $post->id)
+                ->get();
+                
+                // Post Group
+                $group = [];
+                if ($post->group_id !== 0) {
+                    $group = DB::table('groups')
+                    ->where("id", $post->group_id)
+                    ->get();
+                    $group = $group[0];
+                }
 
                 $post->likes = $likes;
                 $post->comments = $comments;
@@ -171,6 +222,7 @@ class ContentController extends Controller
                 $post->updated_at = date("m/d/Y H:i:s", strtotime($post->updated_at));
                 $post->images = $images;
                 $post->files = $files;
+                $post->group = $group;
             }
 
             return response()->json($posts);
@@ -370,7 +422,6 @@ class ContentController extends Controller
         }
 
     }
-
 
     public function uploadFile(Request $request) {
 

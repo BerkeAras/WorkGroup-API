@@ -126,6 +126,53 @@ $api->version('v1', function ($api) {
         'as' => 'api.user.storeCookieChoice',
         'uses' => 'App\Http\Controllers\UserController@storeCookieChoice',
     ]);
+    
+    // Group
+    $api->get('/group/getGroupInformation', [
+        'as' => 'api.group.getGroupInformation',
+        'uses' => 'App\Http\Controllers\GroupController@getGroupInformation',
+    ]);
+    $api->get('/group/getGroups', [
+        'as' => 'api.group.getGroups',
+        'uses' => 'App\Http\Controllers\GroupController@getGroups',
+    ]);
+    $api->get('/group/getTags', [
+        'as' => 'api.group.getTags',
+        'uses' => 'App\Http\Controllers\GroupController@getTags',
+    ]);
+    $api->post('/group/joinGroup', [
+        'as' => 'api.group.joinGroup',
+        'uses' => 'App\Http\Controllers\GroupController@joinGroup',
+    ]);
+    $api->get('/group/getGroupMemberships', [
+        'as' => 'api.group.getGroupMemberships',
+        'uses' => 'App\Http\Controllers\GroupController@getGroupMemberships',
+    ]);
+    $api->post('/group/createGroup', [
+        'as' => 'api.group.createGroup',
+        'uses' => 'App\Http\Controllers\GroupController@createGroup',
+    ]);
+    $api->post('/group/editGroup', [
+        'as' => 'api.group.editGroup',
+        'uses' => 'App\Http\Controllers\GroupController@editGroup',
+    ]);
+    $api->get('/group/getRequest', [
+        'as' => 'api.group.getRequest',
+        'uses' => 'App\Http\Controllers\GroupController@getRequest',
+    ]);
+    $api->post('/group/updateRequestStatus', [
+        'as' => 'api.group.updateRequestStatus',
+        'uses' => 'App\Http\Controllers\GroupController@updateRequestStatus',
+    ]);
+    $api->get('/group/getAllRequests', [
+        'as' => 'api.group.getAllRequests',
+        'uses' => 'App\Http\Controllers\GroupController@getAllRequests',
+    ]);
+    $api->get('/group/getAllMembers', [
+        'as' => 'api.group.getAllMembers',
+        'uses' => 'App\Http\Controllers\GroupController@getAllMembers',
+    ]);
+
 
     // Search
     $api->get('/search', [
@@ -138,5 +185,6 @@ $api->version('v1', function ($api) {
         'namespace' => 'App\Http\Controllers',
     ], function ($api) {
         $api->get('/', 'APIController@getIndex');
+        $api->get('/check', 'APIController@checkConnection');
     });
 });
