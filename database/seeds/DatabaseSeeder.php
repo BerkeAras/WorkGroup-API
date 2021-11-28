@@ -13,5 +13,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(UserTableSeeder::class);
         $this->call(GroupTableSeeder::class);
+        $this->call(AppSettingsTableSeeder::class);
     }
 }
