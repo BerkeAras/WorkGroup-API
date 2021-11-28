@@ -25,6 +25,7 @@ class Users extends Migration
             $table->boolean('account_activated')->default(false);
             $table->string('activation_token', 255);
             $table->boolean('user_online');
+            $table->boolean('is_admin')->default(false);
             $table->datetime('user_last_online');
             $table->rememberToken();
             $table->timestamps();

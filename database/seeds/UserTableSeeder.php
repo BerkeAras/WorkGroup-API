@@ -13,10 +13,11 @@ class UserTableSeeder extends Seeder
     public function run()
     {
         $user_id = DB::table('users')->insertGetId([
-            'name' => 'John Doe',
-            'email' => 'john.doe@mail.com',
+            'name' => 'WorkGroup Administrator',
+            'email' => 'admin@workgroup.com',
             'password' => app('hash')->make('password'),
             'remember_token' => str_random(10),
+            'is_admin' => true,
         ]);
 
         DB::table('user_information')->insert([

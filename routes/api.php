@@ -180,6 +180,20 @@ $api->version('v1', function ($api) {
         'uses' => 'App\Http\Controllers\SearchController@searchQuery',
     ]);
 
+    // Settings
+    $api->get('/settings', [
+        'as' => 'api.settings.getSettings',
+        'uses' => 'App\Http\Controllers\SettingsController@getSettings',
+    ]);
+    $api->post('/settings', [
+        'as' => 'api.settings.saveSettings',
+        'uses' => 'App\Http\Controllers\SettingsController@saveSettings',
+    ]);
+    $api->post('/settings/uploadLogo', [
+        'as' => 'api.settings.uploadLogo',
+        'uses' => 'App\Http\Controllers\SettingsController@uploadLogo',
+    ]);
+
     // API
     $api->group([
         'namespace' => 'App\Http\Controllers',
