@@ -617,9 +617,7 @@ class GroupController extends Controller
 
                 $groupMembers = DB::table('group_members')
                     ->where([
-                        ['group_id', $group_id],
-                        ['user_id', $user_id],
-                        ['is_admin', 1]
+                        ['group_id', $group_id]
                     ])
                     ->get()
                     ->toArray();
@@ -632,13 +630,14 @@ class GroupController extends Controller
                         $groupMemberUser = DB::table('users')
                             ->select('account_activated', 'avatar', 'banner', 'email', 'id', 'name', 'user_last_online', 'user_online')
                             ->where([
-                                ['id', $groupMember->user_id],
-                                ['account_activated', '1']
+                                ['id', $groupMember->user_id]
                             ])
                             ->get()
                             ->toArray();
 
-                        $groupMember->user = $groupMemberUser[0];
+                        if (count($groupMemberUser) > 0) {
+                            $groupMember->user = $groupMemberUser[0];
+                        }
                     }
     
                     $return = array('status' => 1,'users' => $groupMembers);

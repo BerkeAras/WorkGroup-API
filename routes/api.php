@@ -193,6 +193,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.settings.uploadLogo',
         'uses' => 'App\Http\Controllers\SettingsController@uploadLogo',
     ]);
+    $api->get('/settings/users', [
+        'as' => 'api.settings.getUsers',
+        'uses' => 'App\Http\Controllers\SettingsController@getUsers',
+    ]);
 
     // API
     $api->group([
