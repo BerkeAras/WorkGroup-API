@@ -235,4 +235,52 @@ class SettingsController extends Controller
             ));
         }
     }
+
+    // Get Users
+    public static function getUsers(Request $request) {
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            if (isset($request->only('page')["page"])) {
+                $page = $request->only('page')["page"];
+            } else {
+                $page = 1;
+            }
+
+	        $start_from = ($page-1) * 10;
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+
+            $user = DB::table('users')->where('id', $user_id)->first();
+            $userAdmin = $user->is_admin;
+
+            if ($userAdmin == 1) {
+                $users = DB::table('users')
+                    ->select('id', 'name', 'email', 'is_admin', 'created_at', 'updated_at', 'avatar')
+                    ->orderBy('id', 'desc')
+                    ->skip($start_from)
+                    ->take(10)
+                    ->get();
+
+                $total_records = DB::table('users')->count();
+                $total_pages = ceil($total_records / 10);
+
+                $response = array(
+                    "status" => "1",
+                    "error" => false,
+                    "message" => "Users fetched successfully",
+                    "users" => $users,
+                    "total_pages" => $total_pages
+                );
+            } else {
+                $response = array(
+                    "status" => "0",
+                    "error" => true,
+                    "message" => "You are not authorized to perform this action."
+                );
+            }
+
+            return new JsonResponse($response);
+        
+        }
+    }
 }
