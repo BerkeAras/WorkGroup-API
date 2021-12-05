@@ -198,6 +198,32 @@ $api->version('v1', function ($api) {
         'uses' => 'App\Http\Controllers\SettingsController@getUsers',
     ]);
 
+    // KnowledgeBase
+    $api->get('/knowledgebase/getFolders', [
+        'as' => 'api.knowledgebase.getFolders',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@getFolders',
+    ]);
+    $api->get('/knowledgebase/getFiles', [
+        'as' => 'api.knowledgebase.getFiles',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@getFiles',
+    ]);
+    $api->get('/knowledgebase/getFile', [
+        'as' => 'api.knowledgebase.getFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@getFile',
+    ]);
+    $api->get('/knowledgebase/getFolder', [
+        'as' => 'api.knowledgebase.getFolder',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@getFolder',
+    ]);
+    $api->get('/knowledgebase/readFile', [
+        'as' => 'api.knowledgebase.readFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@readFile',
+    ]);
+    $api->post('/knowledgebase/createFolder', [
+        'as' => 'api.knowledgebase.createFolder',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@createFolder',
+    ]);
+
     // API
     $api->group([
         'namespace' => 'App\Http\Controllers',
