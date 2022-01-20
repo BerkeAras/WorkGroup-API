@@ -135,6 +135,10 @@ $app->register(PhanAn\CascadingConfig\CascadingConfigServiceProvider::class);
 $app->register(\Illuminate\Mail\MailServiceProvider::class);
 $app->configure('mail');
 
+$app->configure('filesystems');
+class_alias('Illuminate\Support\Facades\Storage', 'Storage');
+
+
 /*
 |--------------------------------------------------------------------------
 | Load The Application Routes

@@ -135,7 +135,7 @@ class ContentController extends Controller
             if (isset($request->only('user')["user"])) {
                 $user = $request->only('user')["user"];
             }
-            
+
             $group = "%";
             $isGroupMember = false;
             if (isset($request->only('group')["group"])) {
@@ -147,6 +147,7 @@ class ContentController extends Controller
 
                 if ($isGroupPrivate[0]->group_private == 1) {
                     $isGroupMember = DB::table('group_members')
+                        ->where('group_id', $request->only('group')["group"])
                         ->where('user_id', $user_id)
                         ->count();
 
@@ -158,7 +159,7 @@ class ContentController extends Controller
                 } else {
                     $group = $request->only('group')["group"];
                 }
-                
+
             }
 
             $results_per_page = 30;
@@ -174,8 +175,8 @@ class ContentController extends Controller
                 ->offset($start_from)
                 ->get()
                 ->toArray();
-    
-            foreach ($posts as $post) {
+
+            foreach ($posts as $post_key => $post) {
 
                 // Post Likes
                 $likes = DB::table('post_likes')
@@ -192,7 +193,7 @@ class ContentController extends Controller
                 } else {
                     $post->hasLiked = "liked";
                 }
-                
+
                 // Post Comments
                 $comments = DB::select("SELECT * FROM post_comments WHERE post_id = '$post->id'");
                 $comments = count($comments);
@@ -206,14 +207,47 @@ class ContentController extends Controller
                 $files = DB::table('post_files')
                 ->where("post_id", $post->id)
                 ->get();
-                
+
                 // Post Group
                 $group = [];
+                $canReadPost = true;
                 if ($post->group_id !== 0) {
+
+                    $canReadPost = false;
+
                     $group = DB::table('groups')
-                    ->where("id", $post->group_id)
-                    ->get();
+                        ->where("id", $post->group_id)
+                        ->get();
                     $group = $group[0];
+
+                    // Check if user can read group-post
+                        // Check if group is private
+                        $isGroupPrivate = DB::table('groups')
+                            ->where('id', $post->group_id)
+                            ->select('group_private')
+                            ->get()
+                            ->toArray();
+                        if ($isGroupPrivate[0]->group_private == 1) {
+
+                            // Check if user is group member
+                            $isGroupMember = DB::table('group_members')
+                                ->where('group_id', $post->group_id)
+                                ->where('user_id', $user_id)
+                                ->count();
+                            if ($isGroupMember == 0) {
+                                $canReadPost = false;
+                            } else {
+                                $canReadPost = true;
+                            }
+
+                        } else {
+                            $canReadPost = true;
+                        }
+                }
+
+                if (!$canReadPost) {
+                    unset($posts[$post_key]);
+                    continue;
                 }
 
                 $post->likes = $likes;

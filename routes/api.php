@@ -198,6 +198,52 @@ $api->version('v1', function ($api) {
         'uses' => 'App\Http\Controllers\SettingsController@getUsers',
     ]);
 
+    // KnowledgeBase
+    $api->get('/knowledgebase/getFolders', [
+        'as' => 'api.knowledgebase.getFolders',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@getFolders',
+    ]);
+    $api->get('/knowledgebase/getFiles', [
+        'as' => 'api.knowledgebase.getFiles',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@getFiles',
+    ]);
+    $api->get('/knowledgebase/getFile', [
+        'as' => 'api.knowledgebase.getFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@getFile',
+    ]);
+    $api->get('/knowledgebase/getFolder', [
+        'as' => 'api.knowledgebase.getFolder',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@getFolder',
+    ]);
+    $api->get('/knowledgebase/readFile', [
+        'as' => 'api.knowledgebase.readFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@readFile',
+    ]);
+    $api->post('/knowledgebase/createFolder', [
+        'as' => 'api.knowledgebase.createFolder',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@createFolder',
+    ]);
+    $api->post('/knowledgebase/modifyFolder', [
+        'as' => 'api.knowledgebase.modifyFolder',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@modifyFolder',
+    ]);
+    $api->post('/knowledgebase/saveFile', [
+        'as' => 'api.knowledgebase.saveFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@saveFile',
+    ]);
+    $api->get('/knowledgebase/getFileHistory', [
+        'as' => 'api.knowledgebase.getFileHistory',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@getFileHistory',
+    ]);
+    $api->post('/knowledgebase/restoreFromHistory', [
+        'as' => 'api.knowledgebase.restoreFromHistory',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@restoreFromHistory',
+    ]);
+    $api->post('/knowledgebase/uploadFile', [
+        'as' => 'api.knowledgebase.uploadFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@uploadFile',
+    ]);
+
     // API
     $api->group([
         'namespace' => 'App\Http\Controllers',
