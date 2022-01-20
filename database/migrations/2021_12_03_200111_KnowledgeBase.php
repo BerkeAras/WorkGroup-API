@@ -78,6 +78,17 @@ class KnowledgeBase extends Migration
             $table->timestamps();
         });
 
+        // KnowledgeBase File History
+        Schema::create('knowledge_base_file_history', function (Blueprint $table) {
+            $table->charset = 'utf8mb4';
+            $table->collation = 'utf8mb4_unicode_ci';
+            $table->increments('id');
+            $table->integer('knowledge_base_file_history_user_id')->unsigned();
+            $table->integer('knowledge_base_file_history_id')->unsigned();
+            $table->string('knowledge_base_file_history_path');
+            $table->timestamps();
+        });
+
         // KnowledgeBase Folder Activity
         Schema::create('knowledge_base_folder_activity', function (Blueprint $table) {
             $table->charset = 'utf8mb4';

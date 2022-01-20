@@ -15,9 +15,9 @@ class KnowledgeBaseTableSeeder extends Seeder
 
         // New Folder
         DB::table('knowledge_base_folders')->insert([
-            'knowledge_base_folder_name' => 'First Folder',
-            'knowledge_base_folder_slug' => 'first-folder',
-            'knowledge_base_folder_description' => 'This is the first folder',
+            'knowledge_base_folder_name' => 'Default',
+            'knowledge_base_folder_slug' => 'default',
+            'knowledge_base_folder_description' => 'This is the default folder',
             'knowledge_base_folder_parent_id' => 0,
             'knowledge_base_folder_user_id' => 1,
             'created_at' => date('Y-m-d H:i:s'),
@@ -50,11 +50,11 @@ class KnowledgeBaseTableSeeder extends Seeder
             knowledge_base_file_user_id
         */
         DB::table('knowledge_base_files')->insert([
-            'knowledge_base_file_name' => 'First File',
-            'knowledge_base_file_slug' => 'first-file',
+            'knowledge_base_file_name' => 'Introduction',
+            'knowledge_base_file_slug' => 'index',
             'knowledge_base_file_description' => 'This is the first file',
-            'knowledge_base_file_extension' => 'txt',
-            'knowledge_base_file_path' => '1638617738-first-file.txt',
+            'knowledge_base_file_extension' => 'md',
+            'knowledge_base_file_path' => '0-index.md',
             'knowledge_base_file_folder_id' => 1,
             'knowledge_base_file_user_id' => 1,
             'created_at' => date('Y-m-d H:i:s'),

@@ -3,3 +3,4 @@
 .idea
 /public/static
 .DS_Store
+resources/knowledge-base-data/*

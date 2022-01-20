@@ -41,8 +41,13 @@ class GroupController extends Controller
                     ->where('group_members.group_id', $id)
                     ->get();
 
+                $user = DB::table('users')
+                    ->where('id', $user_id)
+                    ->first();
+
                 $isGroupMember = DB::table('group_members')
                     ->where('user_id', $user_id)
+                    ->where('group_id', $id)
                     ->get()
                     ->toArray();
 
@@ -58,6 +63,10 @@ class GroupController extends Controller
                     }
                 } else {
                     $return->is_group_member = false;
+                }
+
+                if ($return->is_admin == false) {
+                    $return->is_admin = $user->is_admin;
                 }
                 
                 return response()->json($return);

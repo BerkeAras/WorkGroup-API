@@ -485,7 +485,6 @@ class AuthController extends Controller
         $token = $request->only('token')["token"];
 
         if ($token) {
-
             $updateUser = DB::table("users")
                 ->where("activation_token", $token)
                 ->update([
