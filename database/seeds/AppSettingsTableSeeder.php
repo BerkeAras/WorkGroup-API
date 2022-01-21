@@ -60,6 +60,13 @@ class AppSettingsTableSeeder extends Seeder
             "created_at" =>  date('Y-m-d H:i:s'),
             "updated_at" => date('Y-m-d H:i:s'),
         ]);
+        DB::table('app_settings')->insert([
+            'config_key' => 'app.minimum_search_length',
+            'config_value' => 3,
+            'last_changed_by' => $adminId,
+            "created_at" =>  date('Y-m-d H:i:s'),
+            "updated_at" => date('Y-m-d H:i:s'),
+        ]);
 
         DB::table('app_settings')->insert([
             'config_key' => 'server.api_url',
