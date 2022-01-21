@@ -125,8 +125,8 @@ class ContentController extends Controller
 
             DB::enableQueryLog();
 
-            if (isset($request->only('from')["from"])) {
-                $page = $request->only('from')["from"];
+            if (isset($request->only('page')["page"])) {
+                $page = $request->only('page')["page"];
             } else {
                 $page = 1;
             }
@@ -162,8 +162,15 @@ class ContentController extends Controller
 
             }
 
-            $results_per_page = 30;
-            $start_from = ($page-1) * $results_per_page;
+            // Check maximum posts per page
+            $maxPosts = DB::table('app_settings')
+                ->where('config_key','app.maximum_posts_per_page')
+                ->get()
+                ->toArray();
+
+            $maxPosts = $maxPosts[0]->config_value;
+
+	        $start_from = ($page-1) * $maxPosts; // 20 Items per page
 
             $posts = DB::table('posts')
                 ->join('users', 'users.id', '=', 'posts.user_id')
@@ -171,10 +178,20 @@ class ContentController extends Controller
                 ->where('users.email', 'LIKE', $user)
                 ->where('posts.group_id', 'LIKE', $group)
                 ->orderByRaw('posts.id DESC')
-                ->limit($results_per_page)
-                ->offset($start_from)
+                ->skip($start_from)
+                ->take($maxPosts)
                 ->get()
                 ->toArray();
+
+            $postsCount = DB::table('posts')
+                ->join('users', 'users.id', '=', 'posts.user_id')
+                ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
+                ->where('users.email', 'LIKE', $user)
+                ->where('posts.group_id', 'LIKE', $group)
+                ->count();
+
+            $total_records = $postsCount;
+            $total_pages = ceil($total_records / $maxPosts);
 
             foreach ($posts as $post_key => $post) {
 
@@ -252,14 +269,21 @@ class ContentController extends Controller
 
                 $post->likes = $likes;
                 $post->comments = $comments;
-                $post->created_at = date("m/d/Y H:i:s", strtotime($post->created_at));
-                $post->updated_at = date("m/d/Y H:i:s", strtotime($post->updated_at));
+                $post->created_at = $post->created_at;
+                $post->updated_at = $post->updated_at;
                 $post->images = $images;
                 $post->files = $files;
                 $post->group = $group;
             }
 
-            return response()->json($posts);
+            $returnArray = array(
+                'posts' => $posts,
+                'total_pages' => (int)$total_pages,
+                'current_page' => (int)$page,
+                'total_records' => $total_records
+            );
+
+            return response()->json($returnArray);
 
         }
 
