@@ -24,6 +24,7 @@ class SettingsController extends Controller
             ->orWhere('config_key','app.registration_enabled')
             ->orWhere('config_key','app.password_reset_enabled')
             ->orWhere('config_key','app.minimum_search_length')
+            ->orWhere('config_key','app.maximum_posts_per_page')
             ->orWhere('config_key','server.api_url')
             ->orWhere('config_key','analytics.google_analytics.enabled')
             ->orWhere('config_key','analytics.google_analytics.key')
@@ -281,7 +282,7 @@ class SettingsController extends Controller
             }
 
             return new JsonResponse($response);
-        
+
         }
     }
 }

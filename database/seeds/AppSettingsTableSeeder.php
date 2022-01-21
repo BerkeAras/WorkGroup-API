@@ -67,6 +67,13 @@ class AppSettingsTableSeeder extends Seeder
             "created_at" =>  date('Y-m-d H:i:s'),
             "updated_at" => date('Y-m-d H:i:s'),
         ]);
+        DB::table('app_settings')->insert([
+            'config_key' => 'app.maximum_posts_per_page',
+            'config_value' => 10,
+            'last_changed_by' => $adminId,
+            "created_at" =>  date('Y-m-d H:i:s'),
+            "updated_at" => date('Y-m-d H:i:s'),
+        ]);
 
         DB::table('app_settings')->insert([
             'config_key' => 'server.api_url',
