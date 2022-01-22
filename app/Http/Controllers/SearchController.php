@@ -33,6 +33,7 @@ class SearchController extends Controller
                 array_push($resultsArray, $searchUsers);
                 
                 $searchGroups = DB::table('groups')
+                    ->select('groups.*', 'group_tags.group_id', 'group_tags.tag')
                     ->leftJoin('group_tags', 'groups.id', '=', 'group_tags.group_id')
                     ->where('groups.group_title', 'LIKE', "%$searchQuery%")
                     ->orWhere('groups.group_description', 'LIKE', "%$searchQuery%")
@@ -40,7 +41,18 @@ class SearchController extends Controller
                     ->limit(4)
                     ->get();
 
-                array_push($resultsArray, $searchGroups);
+                // Remove duplicates from groups
+                $searchGroupsUnique = array();
+                foreach ($searchGroups as $v) {
+                    if (isset($searchGroupsUnique[$v->id])) {
+                        // found duplicate
+                        continue;
+                    }
+                    // remember unique item
+                    $searchGroupsUnique[$v->id] = $v;
+                }
+
+                array_push($resultsArray, $searchGroupsUnique);
                 
                 if ($searchQuery[0] == "#" && !preg_match('/\s/',$searchQuery)) {
                     // Hashtag
