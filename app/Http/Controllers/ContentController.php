@@ -63,7 +63,6 @@ class ContentController extends Controller
                     'group_id' => $group_id,
                     'post_content' => $content,
                     'status' => $status,
-                    'user_id' => $user_id,
                     'created_at' => $created_at,
                     'updated_at' => $updated_at,
                 ]
@@ -177,7 +176,7 @@ class ContentController extends Controller
                 ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
                 ->where('users.email', 'LIKE', $user)
                 ->where('posts.group_id', 'LIKE', $group)
-                ->orderByRaw('posts.id DESC')
+                ->orderByRaw('posts.created_at DESC')
                 ->skip($start_from)
                 ->take($maxPosts)
                 ->get()
@@ -427,7 +426,7 @@ class ContentController extends Controller
                     );
                 } else {
 
-                    $allowed = array("image/jpeg", "image/jpg", "image/tiff", "image/gif", "image/png");
+                    $allowed = array("image/jpeg", "image/jpg", "image/tiff", "image/gif", "image/png", "image/svg");
                     if(!in_array($file_type, $allowed)) {
                         $response = array(
                             "status" => "error",
