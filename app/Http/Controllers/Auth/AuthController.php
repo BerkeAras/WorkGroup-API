@@ -449,7 +449,8 @@ class AuthController extends Controller
                 ->where("id", $user_id)
                 ->update([
                     'user_online' => "1",
-                    'user_last_online' => date('Y-m-d H:i:s', time())
+                    'user_last_online' => date('Y-m-d H:i:s', time()),
+                    'user_last_ip' => $request->ip()
                 ]);
 
             $token = JWTAuth::parseToken();

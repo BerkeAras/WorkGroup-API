@@ -27,6 +27,7 @@ class Users extends Migration
             $table->boolean('user_online');
             $table->boolean('is_admin')->default(false);
             $table->datetime('user_last_online');
+            $table->string('user_last_ip')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
