@@ -247,6 +247,61 @@ class SettingsController extends Controller
                 $page = 1;
             }
 
+            if (isset($request->only("orderBy")["orderBy"])) {
+                $orderBy = $request->only("orderBy")["orderBy"];
+            } else {
+                $orderBy = "created-at-desc";
+            }
+
+            // Allowed Orders
+            $allowedOrders = array(
+                'created-at-desc',
+                'created-at-asc',
+                'online-desc',
+                'online-asc',
+                'admin-desc',
+                'admin-asc'
+            );
+            // Check if orderBy is allowed
+            if (!in_array($orderBy, $allowedOrders)) {
+                $response = array(
+                    "status" => "invalid_orderby_parameter",
+                    "error" => true,
+                    "message" => "Invalid orderBy parameter",
+                );
+                return new JsonResponse($response);
+            }
+
+            // Convert orders to SQL
+            $orderField = "created_at";
+            $orderType = "desc";
+
+            if($orderBy == "created-at-desc"){
+                $orderField = "created_at";
+                $orderType = "desc";
+            }
+            if($orderBy == "created-at-asc"){
+                $orderField = "created_at";
+                $orderType = "asc";
+            }
+            if($orderBy == "online-desc"){
+                $orderField = "user_online";
+                $orderType = "desc";
+            }
+            if($orderBy == "online-asc"){
+                $orderField = "user_online";
+                $orderType = "asc";
+            }
+            if($orderBy == "admin-desc"){
+                $orderField = "is_admin";
+                $orderType = "desc";
+            }
+            if($orderBy == "admin-asc"){
+                $orderField = "is_admin";
+                $orderType = "asc";
+            }
+
+
 	        $start_from = ($page-1) * 10;
 
             $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
@@ -257,7 +312,7 @@ class SettingsController extends Controller
             if ($userAdmin == 1) {
                 $users = DB::table('users')
                     ->select('id', 'name', 'email', 'is_admin', 'created_at', 'updated_at', 'avatar', 'banner', 'cookie_choice', 'account_activated', 'activation_token', 'user_online', 'is_admin', 'user_last_online', 'remember_token')
-                    ->orderBy('id', 'desc')
+                    ->orderBy($orderField, $orderType)
                     ->skip($start_from)
                     ->take(10)
                     ->get();
@@ -267,13 +322,18 @@ class SettingsController extends Controller
                         ->where('user_id', $user->id)
                         ->get();
 
-                    $user_information[0]->time_diff = time() - strtotime($user->user_last_online);
-                    if ($user_information[0]->time_diff > 300) {
-                        // Inactive for 5 minutes
-                        $user->user_online = 0;
+                    $user->user_information = array();
+
+                    if (count($user_information) != 0 && $user_information[0]) {
+                        $user_information[0]->time_diff = time() - strtotime($user->user_last_online);
+                        if ($user_information[0]->time_diff > 300) {
+                            // Inactive for 5 minutes
+                            $user->user_online = 0;
+                        }
+
+                        $user->user_information = $user_information[0];
                     }
 
-                    $user->user_information = $user_information[0];
                 }
 
                 $total_records = DB::table('users')->count();
