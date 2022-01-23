@@ -41,6 +41,16 @@ class AuthController extends Controller
             return $this->onJwtGenerationError();
         }
 
+        // Check if user is activated
+        $user = DB::table("users")
+            ->where("email", $request->only('email')["email"])
+            ->get();
+        $user = $user[0];
+
+        if ($user->account_activated == 0) {
+            return $this->onUnauthorized();
+        }
+
         DB::table("users")
             ->where("email", $request->only('email')["email"])
             ->update([
@@ -245,6 +255,7 @@ class AuthController extends Controller
                     'password' => app('hash')->make($password),
                     'remember_token' => str_random(10),
                     'activation_token' => $token,
+                    'account_activated' => false,
                     'created_at' => date('Y-m-d H:i:s', time()),
                     'updated_at' => date('Y-m-d H:i:s', time())
                 ]);

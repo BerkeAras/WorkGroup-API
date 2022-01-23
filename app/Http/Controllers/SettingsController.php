@@ -151,7 +151,6 @@ class SettingsController extends Controller
             $userAdmin = $user->is_admin;
 
             if ($userAdmin == 1) {
-                
                 $response = array();
                 $upload_dir = './static/';
 
@@ -257,11 +256,25 @@ class SettingsController extends Controller
 
             if ($userAdmin == 1) {
                 $users = DB::table('users')
-                    ->select('id', 'name', 'email', 'is_admin', 'created_at', 'updated_at', 'avatar')
+                    ->select('id', 'name', 'email', 'is_admin', 'created_at', 'updated_at', 'avatar', 'banner', 'cookie_choice', 'account_activated', 'activation_token', 'user_online', 'is_admin', 'user_last_online', 'remember_token')
                     ->orderBy('id', 'desc')
                     ->skip($start_from)
                     ->take(10)
                     ->get();
+
+                foreach ($users as $user) {
+                    $user_information = DB::table('user_information')
+                        ->where('user_id', $user->id)
+                        ->get();
+
+                    $user_information[0]->time_diff = time() - strtotime($user->user_last_online);
+                    if ($user_information[0]->time_diff > 300) {
+                        // Inactive for 5 minutes
+                        $user->user_online = 0;
+                    }
+
+                    $user->user_information = $user_information[0];
+                }
 
                 $total_records = DB::table('users')->count();
                 $total_pages = ceil($total_records / 10);
@@ -283,6 +296,151 @@ class SettingsController extends Controller
 
             return new JsonResponse($response);
 
+        }
+    }
+
+    // Update User Settings
+    public function updateUser(Request $request) {
+        if (JWTAuth::parseToken()->authenticate()) {
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+
+            $user = DB::table('users')->where('id', $user_id)->first();
+            $userAdmin = $user->is_admin;
+
+            if ($userAdmin == 1) {
+
+                $response = $request;
+
+                // User
+                $id = $request->only('id')['id'];
+                $email = $request->only('email')['email'];
+                $name = $request->only('name')['name'];
+                $reset_avatar = $request->only('reset_avatar')['reset_avatar'];
+                $reset_banner = $request->only('reset_banner')['reset_banner'];
+
+                // User Information
+                $birthday = $request->only('birthday')['birthday'];
+                $city = $request->only('city')['city'];
+                $country = $request->only('country')['country'];
+                $department = $request->only('department')['department'];
+                $phone = $request->only('phone')['phone'];
+                $slogan = $request->only('slogan')['slogan'];
+                $street = $request->only('street')['street'];
+
+                // Administration
+                $account_activated = $request->only('account_activated')['account_activated'];
+                $is_admin = $request->only('is_admin')['is_admin'];
+                $reset_password = $request->only('reset_password')['reset_password'];
+                $new_password = $request->only('new_password')['new_password'];
+
+                // Sanitize Input
+                $id = filter_var($id, FILTER_SANITIZE_NUMBER_INT);
+                $email = filter_var($email, FILTER_SANITIZE_EMAIL);
+                $name = filter_var($name, FILTER_SANITIZE_STRING);
+                $birthday = filter_var($birthday, FILTER_SANITIZE_STRING);
+                $city = filter_var($city, FILTER_SANITIZE_STRING);
+                $country = filter_var($country, FILTER_SANITIZE_STRING);
+                $department = filter_var($department, FILTER_SANITIZE_STRING);
+                $phone = filter_var($phone, FILTER_SANITIZE_STRING);
+                $slogan = filter_var($slogan, FILTER_SANITIZE_STRING);
+                $street = filter_var($street, FILTER_SANITIZE_STRING);
+                $account_activated = filter_var($account_activated, FILTER_SANITIZE_NUMBER_INT);
+
+                // Validate Input
+                if (strlen($name) == 0) {
+                    $response = array(
+                        "status" => "field_name_required",
+                        "error" => true,
+                        "message" => "The field name is required."
+                    );
+                    return new JsonResponse($response);
+                }
+
+                if (strlen($email) == 0) {
+                    $response = array(
+                        "status" => "field_email_required",
+                        "error" => true,
+                        "message" => "The field email is required."
+                    );
+                    return new JsonResponse($response);
+                }
+
+                if ($reset_password) {
+                    if (strlen($new_password) == 0) {
+                        $response = array(
+                            "status" => "field_new_password_required",
+                            "error" => true,
+                            "message" => "The field new password is required."
+                        );
+                        return new JsonResponse($response);
+                    }
+                }
+
+                // Update User
+                DB::table('users')
+                    ->where('id', $id)
+                    ->update([
+                        'name' => $name,
+                        'email' => $email,
+                        'account_activated' => $account_activated,
+                        'is_admin' => $is_admin,
+                        'password' => app('hash')->make($new_password),
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ]);
+
+                // Reset Avatar
+                if ($reset_avatar) {
+                    DB::table('users')
+                        ->where('id', $id)
+                        ->update([
+                            'avatar' => "",
+                            'updated_at' => date('Y-m-d H:i:s')
+                        ]);
+                }
+
+                // Reset Banner
+                if ($reset_banner) {
+                    DB::table('users')
+                        ->where('id', $id)
+                        ->update([
+                            'banner' => "",
+                            'updated_at' => date('Y-m-d H:i:s')
+                        ]);
+                }
+
+                // Update User Information
+                DB::table('user_information')
+                    ->where('user_id', $id)
+                    ->update([
+                        'user_birthday' => $birthday,
+                        'user_city' => $city,
+                        'user_country' => $country,
+                        'user_department' => $department,
+                        'user_phone' => $phone,
+                        'user_slogan' => $slogan,
+                        'user_street' => $street,
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ]);
+
+                $response = array(
+                    "status" => "ok",
+                    "error" => false,
+                    "message" => "The User has been updated successfully."
+                );
+
+                return new JsonResponse($response);
+
+            } else {
+
+                $response = array(
+                    "status" => "0",
+                    "error" => true,
+                    "message" => "You are not authorized to perform this action."
+                );
+
+                return new JsonResponse($response);
+
+            }
         }
     }
 }

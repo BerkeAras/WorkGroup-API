@@ -126,7 +126,7 @@ $api->version('v1', function ($api) {
         'as' => 'api.user.storeCookieChoice',
         'uses' => 'App\Http\Controllers\UserController@storeCookieChoice',
     ]);
-    
+
     // Group
     $api->get('/group/getGroupInformation', [
         'as' => 'api.group.getGroupInformation',
@@ -196,6 +196,10 @@ $api->version('v1', function ($api) {
     $api->get('/settings/users', [
         'as' => 'api.settings.getUsers',
         'uses' => 'App\Http\Controllers\SettingsController@getUsers',
+    ]);
+    $api->post('/settings/user', [
+        'as' => 'api.settings.updateUser',
+        'uses' => 'App\Http\Controllers\SettingsController@updateUser',
     ]);
 
     // KnowledgeBase
