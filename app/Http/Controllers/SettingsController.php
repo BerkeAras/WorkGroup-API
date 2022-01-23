@@ -311,7 +311,7 @@ class SettingsController extends Controller
 
             if ($userAdmin == 1) {
                 $users = DB::table('users')
-                    ->select('id', 'name', 'email', 'is_admin', 'created_at', 'updated_at', 'avatar', 'banner', 'cookie_choice', 'account_activated', 'activation_token', 'user_online', 'is_admin', 'user_last_online', 'remember_token')
+                    ->select('id', 'name', 'email', 'is_admin', 'created_at', 'updated_at', 'avatar', 'banner', 'cookie_choice', 'account_activated', 'activation_token', 'user_online', 'is_admin', 'user_last_online', 'user_last_ip', 'remember_token')
                     ->orderBy($orderField, $orderType)
                     ->skip($start_from)
                     ->take(10)
