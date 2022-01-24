@@ -434,6 +434,14 @@ class SettingsController extends Controller
                         );
                         return new JsonResponse($response);
                     }
+
+                    // Update User
+                    DB::table('users')
+                        ->where('id', $id)
+                        ->update([
+                            'password' => app('hash')->make($new_password),
+                        ]);
+
                 }
 
                 // Update User
@@ -444,7 +452,6 @@ class SettingsController extends Controller
                         'email' => $email,
                         'account_activated' => $account_activated,
                         'is_admin' => $is_admin,
-                        'password' => app('hash')->make($new_password),
                         'updated_at' => date('Y-m-d H:i:s')
                     ]);
 
