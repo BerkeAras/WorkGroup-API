@@ -132,6 +132,8 @@ This is an example of how to list things you need to use the software and how to
    ```
    or use run-server.bat (windows), run-server.sh (unix)
 
+7. Create CronJob that calls this URL (every 30-60 minutes): `/api/jobs/onlineStatus`
+
 <!-- ROADMAP -->
 
 ## Roadmap

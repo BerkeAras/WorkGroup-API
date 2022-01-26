@@ -248,6 +248,12 @@ $api->version('v1', function ($api) {
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@uploadFile',
     ]);
 
+    // Jobs
+    $api->get('/jobs/onlineStatus', [
+        'as' => 'api.jobs.onlineStatus',
+        'uses' => 'App\Http\Controllers\JobsController@onlineStatus',
+    ]);
+
     // API
     $api->group([
         'namespace' => 'App\Http\Controllers',
