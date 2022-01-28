@@ -231,6 +231,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.knowledgebase.modifyFolder',
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@modifyFolder',
     ]);
+    $api->post('/knowledgebase/modifyFile', [
+        'as' => 'api.knowledgebase.modifyFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@modifyFile',
+    ]);
     $api->post('/knowledgebase/saveFile', [
         'as' => 'api.knowledgebase.saveFile',
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@saveFile',
@@ -246,6 +250,10 @@ $api->version('v1', function ($api) {
     $api->post('/knowledgebase/uploadFile', [
         'as' => 'api.knowledgebase.uploadFile',
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@uploadFile',
+    ]);
+    $api->post('/knowledgebase/deleteFile', [
+        'as' => 'api.knowledgebase.deleteFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@deleteFile',
     ]);
 
     // Jobs

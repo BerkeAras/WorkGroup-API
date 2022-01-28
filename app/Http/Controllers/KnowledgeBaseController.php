@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
+use GuzzleHttp\Exception\RequestException;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Http\Exception\HttpResponseException;
 use Illuminate\Support\Facades\File;
@@ -40,7 +41,7 @@ class KnowledgeBaseController extends Controller
 
         return response()->json($folders);
     }
-    
+
     // Returns the files
     public function getFiles(Request $request)
     {
@@ -52,6 +53,7 @@ class KnowledgeBaseController extends Controller
 
         $folders = DB::table('knowledge_base_files')
             ->where('knowledge_base_file_folder_id', $folder_parent_id)
+            ->where('knowledge_base_file_status', 1)
             ->orderBy('knowledge_base_file_name', 'asc')
             ->get();
 
@@ -92,45 +94,60 @@ class KnowledgeBaseController extends Controller
     // Check Parent Folder Permissions
     public function checkParentFolderPermissions($folder_id, $parentIsNull = false) {
 
-        $folder_permissions = DB::table('knowledge_base_permissions')
-            ->where('knowledge_base_permission_folder_id', $folder_id)
-            ->where(function ($query) {
-                $query->where('knowledge_base_permission_user_id', JWTAuth::parseToken()->authenticate()->id)
-                ->orWhere('knowledge_base_permission_user_id', 0);
-            })
-            ->first();
-            
-        if ($folder_permissions == null || $parentIsNull == true) {
+        // Check if user is admin
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
+        $user_is_admin = DB::table('users')
+            ->where('id', $user_id)
+            ->where('is_admin', 1)
+            ->count();
+
+        if ($user_is_admin == 1) {
             return array(
-                'write' => false,
-                'delete' => false,
-                'modify' => false
+                'write' => true,
+                'delete' => true,
+                'modify' => true
             );
         } else {
-            
-            $writePermission = false;
-            $deletePermission = false;
-            $modifyPermission = false;
+            $folder_permissions = DB::table('knowledge_base_permissions')
+                ->where('knowledge_base_permission_folder_id', $folder_id)
+                ->where(function ($query) {
+                    $query->where('knowledge_base_permission_user_id', JWTAuth::parseToken()->authenticate()->id)
+                    ->orWhere('knowledge_base_permission_user_id', 0);
+                })
+                ->first();
 
-            if ($folder_permissions->knowledge_base_permission_write == 1) {
-                $writePermission = true;
+            if ($folder_permissions == null || $parentIsNull == true) {
+                return array(
+                    'write' => false,
+                    'delete' => false,
+                    'modify' => false
+                );
+            } else {
+
+                $writePermission = false;
+                $deletePermission = false;
+                $modifyPermission = false;
+
+                if ($folder_permissions->knowledge_base_permission_write == 1) {
+                    $writePermission = true;
+                }
+
+                if ($folder_permissions->knowledge_base_permission_delete == 1) {
+                    $deletePermission = true;
+                }
+
+                if ($folder_permissions->knowledge_base_permission_modify == 1) {
+                    $modifyPermission = true;
+                }
+
+                return array(
+                    'write' => $writePermission,
+                    'delete' => $deletePermission,
+                    'modify' => $modifyPermission
+                );
             }
-
-            if ($folder_permissions->knowledge_base_permission_delete == 1) {
-                $deletePermission = true;
-            }
-
-            if ($folder_permissions->knowledge_base_permission_modify == 1) {
-                $modifyPermission = true;
-            }
-
-            return array(
-                'write' => $writePermission,
-                'delete' => $deletePermission,
-                'modify' => $modifyPermission
-            );
-
         }
+
 
     }
 
@@ -162,7 +179,7 @@ class KnowledgeBaseController extends Controller
                     ->first();
             }
 
-    
+
             // Create activity
             DB::table('knowledge_base_file_activity')->insert([
                 'knowledge_base_file_activity_user_id' => JWTAuth::parseToken()->authenticate()->id,
@@ -171,9 +188,9 @@ class KnowledgeBaseController extends Controller
                 "created_at" => date('Y-m-d H:i:s'),
                 "updated_at" => date('Y-m-d H:i:s'),
             ]);
-    
+
             $file->file_readable = $this->isFileReadable($file->knowledge_base_file_extension);
-    
+
             $file_permissions = $this->checkParentFolderPermissions($file->knowledge_base_file_folder_id);
 
             $file->permissions = $file_permissions;
@@ -184,6 +201,12 @@ class KnowledgeBaseController extends Controller
                 ->where('knowledge_base_file_folder_id', $folder_id)
                 ->where('knowledge_base_file_slug', 'index')
                 ->first();
+
+            if ($file == null) {
+                return response()->json(array(
+                    'error' => 'Index not found'
+                ));
+            }
 
             // Create activity
             DB::table('knowledge_base_file_activity')->insert([
@@ -213,7 +236,7 @@ class KnowledgeBaseController extends Controller
             $folder = DB::table('knowledge_base_folders')
                 ->where('id', $folder_id)
                 ->first();
-    
+
             $folder->permissions = $this->checkParentFolderPermissions($folder_id);
         }
 
@@ -232,11 +255,11 @@ class KnowledgeBaseController extends Controller
             $file_id = str_replace("history_", "", $file_id);
         }
 
-        
+
         if ($file_id != null) {
-            
+
             $file = null;
-            
+
             if (!$isHistory) {
                 $file = DB::table('knowledge_base_files')
                     ->where('id', $file_id)
@@ -251,12 +274,13 @@ class KnowledgeBaseController extends Controller
 
                 $file = DB::table('knowledge_base_files')
                     ->where('id', $history->knowledge_base_file_history_id)
+                    ->where('knowledge_base_file_status', 1)
                     ->first();
 
                 $path = resource_path() . '/knowledge-base-data/' . $history->knowledge_base_file_history_path;
             }
-    
-            
+
+
             // Create activity
             DB::table('knowledge_base_file_activity')->insert([
                 'knowledge_base_file_activity_user_id' => JWTAuth::parseToken()->authenticate()->id,
@@ -265,12 +289,12 @@ class KnowledgeBaseController extends Controller
                 "created_at" => date('Y-m-d H:i:s'),
                 "updated_at" => date('Y-m-d H:i:s'),
             ]);
-    
+
             $file->file_readable = $this->isFileReadable($file->knowledge_base_file_extension);
-    
+
             $file_permissions = $this->checkParentFolderPermissions($file->knowledge_base_file_folder_id);
-    
-    
+
+
             if ($this->isFileReadable($file->knowledge_base_file_extension)) {
 
                 $imageTypes = array(
@@ -288,32 +312,38 @@ class KnowledgeBaseController extends Controller
                     return $base64Str;
                 } else {
                     $file = File::get($path);
-                    $type = File::mimeType($path);    
+                    $type = File::mimeType($path);
                     $response = Response::make($file, 200);
                     $response->header("Content-Type", $type);
                     return $response;
                 }
 
             } else {
-    
+
                 $file = File::get($path);
-                $type = File::mimeType($path);    
+                $type = File::mimeType($path);
                 $response = Response::make($file, 200);
                 $response->header("Content-Type", $type)
                     ->header("Content-Disposition", "inline")
                     ->header("filename", $path)
                     ->header("Content-Transfer-Encoding", "binary");
                 return $response;
-    
+
             }
         } else {
             $file = DB::table('knowledge_base_files')
                 ->where('knowledge_base_file_folder_id', $folder_id)
                 ->where('knowledge_base_file_slug', 'index')
                 ->first();
-    
+
+            if ($file == null) {
+                return response()->json(array(
+                    'error' => 'Index not found'
+                ));
+            }
+
             $path = resource_path() . '/knowledge-base-data/' . $file->knowledge_base_file_path;
-            
+
             // Create activity
             DB::table('knowledge_base_file_activity')->insert([
                 'knowledge_base_file_activity_user_id' => JWTAuth::parseToken()->authenticate()->id,
@@ -322,13 +352,13 @@ class KnowledgeBaseController extends Controller
                 "created_at" => date('Y-m-d H:i:s'),
                 "updated_at" => date('Y-m-d H:i:s'),
             ]);
-    
+
             $file->file_readable = $this->isFileReadable($file->knowledge_base_file_extension);
-    
+
             $file_permissions = $this->checkParentFolderPermissions($file->knowledge_base_file_folder_id);
-    
+
             $file = File::get($path);
-            $type = File::mimeType($path);    
+            $type = File::mimeType($path);
             $response = Response::make($file, 200);
             $response->header("Content-Type", $type);
             return $response;
@@ -436,7 +466,7 @@ class KnowledgeBaseController extends Controller
         // Check if file is editable by file-editor
         $file_extension = $file->knowledge_base_file_extension;
         $file_editable = $this->isFileReadable($file_extension);
-        
+
         if ($file_editable) {
 
             $time = time();
@@ -484,6 +514,107 @@ class KnowledgeBaseController extends Controller
                 ));
             }
         }
+    }
+
+    // Modify File
+    public function modifyFile(Request $request) {
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
+        $time = time();
+        $file_id = $request->input('file_id');
+        $file_name = $request->input('file_name');
+        $file_description = $request->input('file_description');
+        $modify_file = $request->input('modify_file');
+
+        // Get File Details
+        $file = DB::table('knowledge_base_files')
+            ->where('id', $file_id)
+            ->first();
+
+        // Update File Details
+        DB::table('knowledge_base_files')
+            ->where('id', $file_id)
+            ->update([
+                'knowledge_base_file_name' => $file_name,
+                'knowledge_base_file_description' => $file_description,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+
+        // Upload new file version if modified
+        if ($modify_file == "true") {
+            if ($_FILES["modified_file"]) {
+                $upload_file_name = $_FILES["modified_file"]["name"];
+                $upload_file_tmp_name = $_FILES["modified_file"]["tmp_name"];
+                $upload_file_ext = explode(".", $upload_file_name);
+                $upload_file_ext = strtolower(end($upload_file_ext));
+                $error = $_FILES["modified_file"]["error"];
+
+                if($error > 0){
+                    // Response
+                    return response()->json(array(
+                        "status" => "error",
+                        "error" => true,
+                        "message" => "Error uploading the file!"
+                    ));
+                } else {
+
+                    // Generate a new File Name
+                    $generatedFileName = time() . '-' . preg_replace('/\s+/', '-', $upload_file_name);
+                    $generatedFileName = "modified_" . $time . "_" . strtolower($generatedFileName);
+
+                    if (move_uploaded_file($upload_file_tmp_name , resource_path() . "/knowledge-base-data/$generatedFileName")) {
+
+                        // Create File-History
+                        DB::table('knowledge_base_file_history')->insert([
+                            'knowledge_base_file_history_user_id' => JWTAuth::parseToken()->authenticate()->id,
+                            'knowledge_base_file_history_id' => $file_id,
+                            'knowledge_base_file_history_path' => $file->knowledge_base_file_path,
+                            "created_at" => date('Y-m-d H:i:s', $time),
+                            "updated_at" => date('Y-m-d H:i:s', $time),
+                        ]);
+
+                        // Update File Details
+                        DB::table('knowledge_base_files')
+                            ->where('id', $file_id)
+                            ->update([
+                                'knowledge_base_file_path' => $generatedFileName,
+                                'knowledge_base_file_extension' => $upload_file_ext,
+                                'updated_at' => date('Y-m-d H:i:s'),
+                            ]);
+
+                        // Create Activity
+                        DB::table('knowledge_base_file_activity')->insert([
+                            'knowledge_base_file_activity_user_id' => $user_id,
+                            'knowledge_base_file_activity_file_id' => $file_id,
+                            'knowledge_base_file_activity_action' => 'modify_file',
+                            "created_at" => date('Y-m-d H:i:s'),
+                            "updated_at" => date('Y-m-d H:i:s'),
+                        ]);
+
+                        // Response
+                        return response()->json(array(
+                            "status" => "success",
+                            "error" => false,
+                            "message" => ""
+                        ));
+
+                    } else {
+                        // Response
+                        return response()->json(array(
+                            "status" => "success",
+                            "error" => false,
+                            "message" => ""
+                        ));
+                    }
+                }
+            }
+        }
+
+        // Response
+        return response()->json(array(
+            "status" => "success",
+            "error" => false,
+            "message" => ""
+        ));
     }
 
     // Get File History
@@ -591,7 +722,7 @@ class KnowledgeBaseController extends Controller
             } else {
                 $generatedFileName = time() . '-' . preg_replace('/\s+/', '-', $upload_file_name);
                 $generatedFileName = strtolower($generatedFileName);
-                
+
                 if (move_uploaded_file($upload_file_tmp_name , resource_path() . "/knowledge-base-data/$generatedFileName")) {
 
                     // Create File
@@ -642,5 +773,47 @@ class KnowledgeBaseController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    // Delete File
+    public function deleteFile(Request $request) {
+        // Check if the user has the delete permission
+        $folder_id = $request->input('folder_id');
+        $file_id = $request->input('file_id');
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
+
+        $file_permissions = $this->checkParentFolderPermissions($folder_id);
+
+        if ($file_permissions["delete"]) {
+            // Set File Status to 0
+            DB::table('knowledge_base_files')
+                ->where('id', $file_id)
+                ->update([
+                    'knowledge_base_file_status' => 0,
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]);
+
+            // Create Activity
+            DB::table('knowledge_base_file_activity')->insert([
+                'knowledge_base_file_activity_user_id' => $user_id,
+                'knowledge_base_file_activity_file_id' => $file_id,
+                'knowledge_base_file_activity_action' => 'delete_file',
+                "created_at" => date('Y-m-d H:i:s'),
+                "updated_at" => date('Y-m-d H:i:s'),
+            ]);
+
+            return response()->json(array(
+                "status" => "success",
+                "error" => false,
+                "message" => ""
+            ));
+        } else {
+            return response()->json(array(
+                "status" => "error",
+                "error" => true,
+                "message" => "You don't have the permission to delete this file!"
+            ));
+        }
+
     }
 }
