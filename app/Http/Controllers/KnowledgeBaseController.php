@@ -74,7 +74,12 @@ class KnowledgeBaseController extends Controller
         $readable_file_formats = array(
             'txt',
             'md',
-            'html'
+            'html',
+            'jpg',
+            'jpeg',
+            'png',
+            'gif',
+            'tiff'
         );
 
         if (in_array($file_extension, $readable_file_formats)) {
@@ -267,11 +272,28 @@ class KnowledgeBaseController extends Controller
     
     
             if ($this->isFileReadable($file->knowledge_base_file_extension)) {
-                $file = File::get($path);
-                $type = File::mimeType($path);    
-                $response = Response::make($file, 200);
-                $response->header("Content-Type", $type);
-                return $response;
+
+                $imageTypes = array(
+                    'jpg',
+                    'jpeg',
+                    'png',
+                    'gif',
+                    'tiff'
+                );
+
+                if (in_array($file->knowledge_base_file_extension, $imageTypes)) {
+                    $fileObject = File::get($path);
+                    $imageEncoded = base64_encode($fileObject);
+                    $base64Str = 'data:image/' . $file->knowledge_base_file_extension . ';base64,' . $imageEncoded;
+                    return $base64Str;
+                } else {
+                    $file = File::get($path);
+                    $type = File::mimeType($path);    
+                    $response = Response::make($file, 200);
+                    $response->header("Content-Type", $type);
+                    return $response;
+                }
+
             } else {
     
                 $file = File::get($path);
