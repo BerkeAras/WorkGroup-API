@@ -357,11 +357,27 @@ class KnowledgeBaseController extends Controller
 
             $file_permissions = $this->checkParentFolderPermissions($file->knowledge_base_file_folder_id);
 
-            $file = File::get($path);
-            $type = File::mimeType($path);
-            $response = Response::make($file, 200);
-            $response->header("Content-Type", $type);
-            return $response;
+            $imageTypes = array(
+                'jpg',
+                'jpeg',
+                'png',
+                'gif',
+                'tiff'
+            );
+
+            if (in_array($file->knowledge_base_file_extension, $imageTypes)) {
+                $fileObject = File::get($path);
+                $imageEncoded = base64_encode($fileObject);
+                $base64Str = 'data:image/' . $file->knowledge_base_file_extension . ';base64,' . $imageEncoded;
+                return $base64Str;
+            } else {
+                $file = File::get($path);
+                $type = File::mimeType($path);
+                $response = Response::make($file, 200);
+                $response->header("Content-Type", $type);
+                return $response;
+            }
+
         }
 
     }
@@ -369,8 +385,15 @@ class KnowledgeBaseController extends Controller
     // Create Folder
     public function createFolder(Request $request)
     {
-        $folder_name = $request->input('folder_name');
-        $folder_parent_id = $request->input('folder_parent_id');
+        $folder_name = trim($request->input('folder_name'));
+        $folder_parent_id = trim($request->input('folder_parent_id'));
+
+        if ($folder_name == '') {
+            return response()->json(array(
+                'success' => false,
+                'error' => 'Folder name cannot be empty'
+            ));
+        }
 
         $folder = DB::table('knowledge_base_folders')
             ->where('knowledge_base_folder_name', $folder_name)
@@ -434,9 +457,17 @@ class KnowledgeBaseController extends Controller
 
     // Modify Folder
     public function modifyFolder(Request $request) {
-        $folder_id = $request->input('folder_id');
-        $folder_name = $request->input('folder_name');
-        $folder_description = $request->input('folder_description');
+        $folder_id = trim($request->input('folder_id'));
+        $folder_name = trim($request->input('folder_name'));
+        $folder_description = trim($request->input('folder_description'));
+
+        if ($folder_name == '') {
+            return response()->json(array(
+                'success' => false,
+                'folder_id' => $folder_id,
+                'error' => 'Folder name cannot be empty'
+            ));
+        }
 
         DB::table('knowledge_base_folders')
             ->where('id', $folder_id)
@@ -520,10 +551,18 @@ class KnowledgeBaseController extends Controller
     public function modifyFile(Request $request) {
         $user_id = JWTAuth::parseToken()->authenticate()->id;
         $time = time();
-        $file_id = $request->input('file_id');
-        $file_name = $request->input('file_name');
-        $file_description = $request->input('file_description');
+        $file_id = trim($request->input('file_id'));
+        $file_name = trim($request->input('file_name'));
+        $file_description = trim($request->input('file_description'));
         $modify_file = $request->input('modify_file');
+
+        if ($file_name == '') {
+            return response()->json(array(
+                'success' => false,
+                'file_id' => $file_id,
+                'error' => 'File name cannot be empty'
+            ));
+        }
 
         // Get File Details
         $file = DB::table('knowledge_base_files')
@@ -712,6 +751,12 @@ class KnowledgeBaseController extends Controller
             $upload_file_ext = strtolower(end($upload_file_ext));
             $error = $_FILES["file"]["error"];
 
+            if ($file_name == "" || $file_name == null) {
+                $file_name = $upload_file_name;
+                // Remove File Extension
+                $file_name = str_replace('.' . $upload_file_ext, '', $file_name);
+            }
+
             if($error > 0){
                 // Response
                 $response = array(
@@ -785,19 +830,54 @@ class KnowledgeBaseController extends Controller
         $file_permissions = $this->checkParentFolderPermissions($folder_id);
 
         if ($file_permissions["delete"]) {
-            // Set File Status to 0
-            DB::table('knowledge_base_files')
+            // Get File path
+            $file = DB::table('knowledge_base_files')
                 ->where('id', $file_id)
-                ->update([
-                    'knowledge_base_file_status' => 0,
-                    'updated_at' => date('Y-m-d H:i:s')
-                ]);
+                ->first();
+
+            // Delete File
+            $path = resource_path() . '/knowledge-base-data/' . $file->knowledge_base_file_path;
+            File::delete($path);
+            DB::table('knowledge_base_files')->where('id', $file_id)->delete();
 
             // Create Activity
             DB::table('knowledge_base_file_activity')->insert([
                 'knowledge_base_file_activity_user_id' => $user_id,
                 'knowledge_base_file_activity_file_id' => $file_id,
                 'knowledge_base_file_activity_action' => 'delete_file',
+                "created_at" => date('Y-m-d H:i:s'),
+                "updated_at" => date('Y-m-d H:i:s'),
+            ]);
+
+            // Get File history
+            $file_history = DB::table('knowledge_base_file_history')
+                ->where('knowledge_base_file_history_id', $file_id)
+                ->get();
+
+            // Delete File history
+            foreach ($file_history as $file_history_item) {
+                $path = resource_path() . '/knowledge-base-data/' . $file_history_item->knowledge_base_file_history_path;
+                File::delete($path);
+                DB::table('knowledge_base_file_history')->where('id', $file_history_item->id)->delete();
+
+                // Create Activity
+                DB::table('knowledge_base_file_activity')->insert([
+                    'knowledge_base_file_activity_user_id' => $user_id,
+                    'knowledge_base_file_activity_file_id' => $file_id,
+                    'knowledge_base_file_activity_action' => 'delete_file_history',
+                    "created_at" => date('Y-m-d H:i:s'),
+                    "updated_at" => date('Y-m-d H:i:s'),
+                ]);
+            }
+
+            // Delete File comments
+            DB::table('knowledge_base_file_comments')->where('knowledge_base_file_comment_file_id', $file_id)->delete();
+
+            // Create Activity
+            DB::table('knowledge_base_file_activity')->insert([
+                'knowledge_base_file_activity_user_id' => $user_id,
+                'knowledge_base_file_activity_file_id' => $file_id,
+                'knowledge_base_file_activity_action' => 'delete_file_comments',
                 "created_at" => date('Y-m-d H:i:s'),
                 "updated_at" => date('Y-m-d H:i:s'),
             ]);
@@ -812,6 +892,100 @@ class KnowledgeBaseController extends Controller
                 "status" => "error",
                 "error" => true,
                 "message" => "You don't have the permission to delete this file!"
+            ));
+        }
+
+    }
+
+    // Delete Folder
+    public function deleteFolder(Request $request) {
+        // Check if the user has the delete permission
+        $folder_id = $request->input('folder_id');
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
+
+        $file_permissions = $this->checkParentFolderPermissions($folder_id);
+
+        if ($file_permissions["delete"]) {
+
+            // Get File path
+            $files = DB::table('knowledge_base_files')
+                ->where('knowledge_base_file_folder_id', $folder_id)
+                ->get();
+
+            foreach ($files as $file) {
+                // Delete File
+                $path = resource_path() . '/knowledge-base-data/' . $file->knowledge_base_file_path;
+                File::delete($path);
+                DB::table('knowledge_base_files')->where('id', $file->id)->delete();
+
+                // Create Activity
+                DB::table('knowledge_base_file_activity')->insert([
+                    'knowledge_base_file_activity_user_id' => $user_id,
+                    'knowledge_base_file_activity_file_id' => $file->id,
+                    'knowledge_base_file_activity_action' => 'delete_file',
+                    "created_at" => date('Y-m-d H:i:s'),
+                    "updated_at" => date('Y-m-d H:i:s'),
+                ]);
+
+                // Get File history
+                $file_history = DB::table('knowledge_base_file_history')
+                    ->where('knowledge_base_file_history_id', $file->id)
+                    ->get();
+
+                    // Delete File history
+                foreach ($file_history as $file_history_item) {
+                    $path = resource_path() . '/knowledge-base-data/' . $file_history_item->knowledge_base_file_history_path;
+                    File::delete($path);
+                    DB::table('knowledge_base_file_history')->where('id', $file_history_item->id)->delete();
+
+                    // Create Activity
+                    DB::table('knowledge_base_file_activity')->insert([
+                        'knowledge_base_file_activity_user_id' => $user_id,
+                        'knowledge_base_file_activity_file_id' => $file->id,
+                        'knowledge_base_file_activity_action' => 'delete_file_history',
+                        "created_at" => date('Y-m-d H:i:s'),
+                        "updated_at" => date('Y-m-d H:i:s'),
+                    ]);
+                }
+
+                // Delete File comments
+                DB::table('knowledge_base_file_comments')->where('knowledge_base_file_comment_file_id', $file->id)->delete();
+
+                // Create Activity
+                DB::table('knowledge_base_file_activity')->insert([
+                    'knowledge_base_file_activity_user_id' => $user_id,
+                    'knowledge_base_file_activity_file_id' => $file->id,
+                    'knowledge_base_file_activity_action' => 'delete_file_comments',
+                    "created_at" => date('Y-m-d H:i:s'),
+                    "updated_at" => date('Y-m-d H:i:s'),
+                ]);
+            }
+
+            // Delete Folder
+            DB::table('knowledge_base_folders')->where('id', $folder_id)->delete();
+
+            // Delete Permission
+            DB::table('knowledge_base_permissions')->where('knowledge_base_permission_folder_id', $folder_id)->delete();
+
+            // Create Activity
+            DB::table('knowledge_base_folder_activity')->insert([
+                'knowledge_base_folder_activity_user_id' => $user_id,
+                'knowledge_base_folder_activity_folder_id' => $folder_id,
+                'knowledge_base_folder_activity_action' => 'delete_folder',
+                "created_at" => date('Y-m-d H:i:s'),
+                "updated_at" => date('Y-m-d H:i:s'),
+            ]);
+
+            return response()->json(array(
+                "status" => "success",
+                "error" => false,
+                "message" => ""
+            ));
+        } else {
+            return response()->json(array(
+                "status" => "error",
+                "error" => true,
+                "message" => "You don't have the permission to delete this folder!"
             ));
         }
 

@@ -255,6 +255,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.knowledgebase.deleteFile',
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@deleteFile',
     ]);
+    $api->post('/knowledgebase/deleteFolder', [
+        'as' => 'api.knowledgebase.deleteFolder',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@deleteFolder',
+    ]);
 
     // Jobs
     $api->get('/jobs/onlineStatus', [
