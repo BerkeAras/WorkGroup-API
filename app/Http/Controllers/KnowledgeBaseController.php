@@ -609,11 +609,13 @@ class KnowledgeBaseController extends Controller
             ->count();
         
         if ($existingFile > 0) {
-            return response()->json(array(
-                'success' => false,
-                'file_id' => $file_id,
-                'error' => 'The File name already exists. Please enter a different file name.'
-            ));
+            if ($file_name != $file->knowledge_base_file_name) {
+                return response()->json(array(
+                    'success' => false,
+                    'file_id' => $file_id,
+                    'error' => 'The File name already exists. Please enter a different file name.'
+                ));
+            }
         }
 
         // Get File Details
@@ -703,7 +705,7 @@ class KnowledgeBaseController extends Controller
 
         // Response
         return response()->json(array(
-            'success' => false,
+            'success' => true,
             "message" => ""
         ));
     }
