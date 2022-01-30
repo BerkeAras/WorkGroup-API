@@ -23,10 +23,10 @@ class UserTableSeeder extends Seeder
 
         DB::table('user_information')->insert([
             'user_id' => $user_id,
-            'user_slogan' => 'Test-Account',
+            'user_slogan' => 'Administrator of the WorkGroup',
             'user_country' => 'US',
-            'user_city' => 'New York',
-            'user_department' => 'Example Department',
+            'user_city' => 'At Home',
+            'user_department' => 'Administration',
             'user_birthday' => '2000-01-01',
             "created_at" =>  date('Y-m-d H:i:s'),
             "updated_at" => date('Y-m-d H:i:s'),
