@@ -18,6 +18,7 @@ class UserTableSeeder extends Seeder
             'password' => app('hash')->make('password'),
             'remember_token' => str_random(10),
             'is_admin' => true,
+            'account_activated' => true
         ]);
 
         DB::table('user_information')->insert([

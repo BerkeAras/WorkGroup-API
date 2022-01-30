@@ -391,7 +391,7 @@ class KnowledgeBaseController extends Controller
         if ($folder_name == '') {
             return response()->json(array(
                 'success' => false,
-                'error' => 'Folder name cannot be empty'
+                'error' => 'The Folder name cannot be empty. Please enter a folder name.'
             ));
         }
 
@@ -400,8 +400,22 @@ class KnowledgeBaseController extends Controller
             ->where('knowledge_base_folder_parent_id', $folder_parent_id)
             ->first();
 
-        if ($folder != null) {
-            $folder_name = $folder_name . "-1";
+        $folderNameIsNotAvailable = true;
+        $folderNameExtension = 1;
+
+        while ($folderNameIsNotAvailable) {
+            $folder = DB::table('knowledge_base_folders')
+                ->where('knowledge_base_folder_name', $folder_name)
+                ->where('knowledge_base_folder_parent_id', $folder_parent_id)
+                ->count();
+
+            if ($folder > 0) {
+                $folder_name = $folder_name . '-' . $folderNameExtension;
+            } else {
+                $folderNameIsNotAvailable = false;
+            }
+
+            $folderNameExtension++;
         }
 
         $slug = str_slug($folder_name);
@@ -465,9 +479,27 @@ class KnowledgeBaseController extends Controller
             return response()->json(array(
                 'success' => false,
                 'folder_id' => $folder_id,
-                'error' => 'Folder name cannot be empty'
+                'error' => 'The Folder name cannot be empty. Please enter a folder name.'
             ));
         }
+
+        // Check if folder name already exists in this parent
+        $folder = DB::table('knowledge_base_folders')
+            ->where('id', $folder_id)
+            ->first();
+
+        $existingFolder = DB::table('knowledge_base_folders')
+            ->where('knowledge_base_folder_name', $folder_name)
+            ->where('knowledge_base_folder_parent_id', $folder->knowledge_base_folder_parent_id)
+            ->count();
+
+        if ($existingFolder > 0) {
+            return response()->json(array(
+                'success' => false,
+                'error' => 'The Folder name already exists. Please enter a different folder name.'
+            ));
+        }
+
 
         DB::table('knowledge_base_folders')
             ->where('id', $folder_id)
@@ -541,6 +573,7 @@ class KnowledgeBaseController extends Controller
                 // Response
                 return response()->json(array(
                     'success' => false,
+                    'error' => 'There was an error saving the file. Please try again later.',
                     'file_id' => $file_id
                 ));
             }
@@ -554,13 +587,32 @@ class KnowledgeBaseController extends Controller
         $file_id = trim($request->input('file_id'));
         $file_name = trim($request->input('file_name'));
         $file_description = trim($request->input('file_description'));
+        $file_slug = str_slug($file_name);
         $modify_file = $request->input('modify_file');
 
         if ($file_name == '') {
             return response()->json(array(
                 'success' => false,
                 'file_id' => $file_id,
-                'error' => 'File name cannot be empty'
+                'error' => 'The File name cannot be empty. Please enter a file name.'
+            ));
+        }
+
+        // Check if file name already exists in this parent
+        $file = DB::table('knowledge_base_files')
+            ->where('id', $file_id)
+            ->first();
+        
+        $existingFile = DB::table('knowledge_base_files')
+            ->where('knowledge_base_file_slug', $file_slug)
+            ->where('knowledge_base_file_folder_id', $file->knowledge_base_file_folder_id)
+            ->count();
+        
+        if ($existingFile > 0) {
+            return response()->json(array(
+                'success' => false,
+                'file_id' => $file_id,
+                'error' => 'The File name already exists. Please enter a different file name.'
             ));
         }
 
@@ -574,6 +626,7 @@ class KnowledgeBaseController extends Controller
             ->where('id', $file_id)
             ->update([
                 'knowledge_base_file_name' => $file_name,
+                'knowledge_base_file_slug' => $file_slug,
                 'knowledge_base_file_description' => $file_description,
                 'updated_at' => date('Y-m-d H:i:s'),
             ]);
@@ -650,8 +703,7 @@ class KnowledgeBaseController extends Controller
 
         // Response
         return response()->json(array(
-            "status" => "success",
-            "error" => false,
+            'success' => false,
             "message" => ""
         ));
     }
@@ -760,15 +812,33 @@ class KnowledgeBaseController extends Controller
             if($error > 0){
                 // Response
                 $response = array(
-                    "status" => "error",
-                    "error" => true,
-                    "message" => "Error uploading the file!"
+                    'success' => false,
+                    "error" => "Error uploading the file! Please try again. (Error Code: " . $error . ")"
                 );
             } else {
                 $generatedFileName = time() . '-' . preg_replace('/\s+/', '-', $upload_file_name);
                 $generatedFileName = strtolower($generatedFileName);
 
                 if (move_uploaded_file($upload_file_tmp_name , resource_path() . "/knowledge-base-data/$generatedFileName")) {
+                    $fileNameIsNotAvailable = true;
+                    $fileNameExtension = 1;
+
+                    while ($fileNameIsNotAvailable) {
+                        $fileSlug = DB::table('knowledge_base_files')
+                            ->where('knowledge_base_file_name', $file_name)
+                            ->where('knowledge_base_file_folder_id', $folder_id)
+                            ->count();
+
+                        if ($fileSlug > 0) {
+                            $file_name = $file_name . '-' . $fileNameExtension;
+                        } else {
+                            $fileNameIsNotAvailable = false;
+                        }
+
+                        $fileNameExtension++;
+                    }
+
+                    $slug = str_slug($file_name);
 
                     // Create File
                     $file_id = DB::table('knowledge_base_files')->insertGetId([
@@ -794,26 +864,23 @@ class KnowledgeBaseController extends Controller
 
                     // Response
                     $response = array(
-                        "status" => "success",
-                        "error" => false,
+                        'success' => true,
                         "message" => "File uploaded successfully!"
                     );
 
                 } else {
                     // Response
                     $response = array(
-                        "status" => "error",
-                        "error" => true,
-                        "message" => "Error uploading the file!"
+                        'success' => false,
+                        "error" => "Error uploading the file! Please try again."
                     );
                 }
             }
         } else {
             // Response
             $response = array(
-                "status" => "error",
-                "error" => true,
-                "message" => "Error uploading the file!"
+                'success' => false,
+                "error" => "Error uploading the file! Please try again."
             );
         }
 
@@ -964,6 +1031,11 @@ class KnowledgeBaseController extends Controller
             // Delete Folder
             DB::table('knowledge_base_folders')->where('id', $folder_id)->delete();
 
+            // Delete Subfolders
+            DB::table('knowledge_base_folders')
+                ->where('knowledge_base_folder_parent_id', $folder_id)
+                ->delete();
+
             // Delete Permission
             DB::table('knowledge_base_permissions')->where('knowledge_base_permission_folder_id', $folder_id)->delete();
 
@@ -989,5 +1061,79 @@ class KnowledgeBaseController extends Controller
             ));
         }
 
+    }
+
+    // Create new Markdown File
+    public function createNewFile(Request $request) {
+        $folder_id = $request->input('folder_id');
+        $file_name = $request->input('file_name');
+        $file_description = $request->input('file_description');
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
+
+        if ($file_name == '') {
+            return response()->json(array(
+                'success' => false,
+                'error' => 'The File name cannot be empty. Please enter a file name.'
+            ));
+        }
+
+        $fileNameIsNotAvailable = true;
+        $fileNameExtension = 1;
+
+        while ($fileNameIsNotAvailable) {
+            $fileSlug = DB::table('knowledge_base_files')
+                ->where('knowledge_base_file_name', $file_name)
+                ->where('knowledge_base_file_folder_id', $folder_id)
+                ->count();
+
+            if ($fileSlug > 0) {
+                $file_name = $file_name . '-' . $fileNameExtension;
+            } else {
+                $fileNameIsNotAvailable = false;
+            }
+
+            $fileNameExtension++;
+        }
+
+        $slug = str_slug($file_name);
+
+        $generatedFileName = time() . '-' . preg_replace('/\s+/', '-', $slug);
+        $generatedFileName = strtolower($generatedFileName);
+
+        // Create File
+        $file_id = DB::table('knowledge_base_files')->insertGetId([
+            'knowledge_base_file_name' => $file_name,
+            'knowledge_base_file_slug' => $slug,
+            'knowledge_base_file_description' => $file_description,
+            'knowledge_base_file_extension' => 'md',
+            'knowledge_base_file_path' => $generatedFileName . '.md',
+            'knowledge_base_file_folder_id' => $folder_id,
+            'knowledge_base_file_user_id' => $user_id,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+
+        // Create Activity
+        DB::table('knowledge_base_file_activity')->insert([
+            'knowledge_base_file_activity_user_id' => $user_id,
+            'knowledge_base_file_activity_file_id' => $file_id,
+            'knowledge_base_file_activity_action' => 'create_file',
+            "created_at" => date('Y-m-d H:i:s'),
+            "updated_at" => date('Y-m-d H:i:s'),
+        ]);
+
+        // Create the File
+        $path = resource_path() . '/knowledge-base-data/' . $generatedFileName . '.md';
+        File::put($path, '# Knowledge Base "' . $file_name . '"');
+
+        // Response
+        $response = array(
+            'success' => true,
+            'file_id' => $file_id,
+            'folder_id' => $folder_id,
+            "message" => "File uploaded successfully!"
+        );
+
+        return response()->json($response);
     }
 }
