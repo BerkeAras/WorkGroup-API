@@ -14,8 +14,8 @@ class GroupTableSeeder extends Seeder
     {
         DB::table('groups')->insertGetId([
             'creator_user_id' => '2',
-            'group_title' => 'Marketing-Abteilung',
-            'group_description' => 'Offene Gruppe der Marketing-Abteilung!',
+            'group_title' => 'First Group',
+            'group_description' => 'This is the first (public) #group!',
             'group_avatar' => '',
             'group_banner' => '',
             'created_at' =>  date('Y-m-d H:i:s'),
@@ -38,7 +38,7 @@ class GroupTableSeeder extends Seeder
         
         DB::table('group_tags')->insert([
             'group_id' => '1',
-            'tag' => 'marketing',
+            'tag' => 'group',
             "created_at" =>  date('Y-m-d H:i:s'),
             "updated_at" => date('Y-m-d H:i:s'),
         ]);
