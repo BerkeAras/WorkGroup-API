@@ -349,7 +349,7 @@ class AuthController extends Controller
             ]);
 
             try {
-                Mail::send(new PasswordResetMail($results->email, $otp));
+                Mail::send(new PasswordResetMail($results->email, env("APP_URL"), $otp));
             
                 return response([
                     'message' => 'Reset success',

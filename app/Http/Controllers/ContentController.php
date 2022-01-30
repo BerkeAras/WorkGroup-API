@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Http\Exception\HttpResponseException;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\NotificationController;
 
 class ContentController extends Controller
 {
@@ -386,6 +387,27 @@ class ContentController extends Controller
             $content = str_replace('{{BR}}', '<br>', $content);
 
             if (DB::insert('insert into post_comments (user_id, post_id, comment_content, created_at, updated_at) values (?, ?, ?, ?, ?)', [$user_id, $post_id, $content, $created_at, $updated_at])) {
+
+                // Get Post Owner
+                $post = DB::table('posts')
+                    ->where("id", $post_id)
+                    ->first();
+
+                // Sender
+                $user = DB::table('users')
+                    ->where("id", $user_id)
+                    ->first();
+
+                // Send notification to user
+                $notification = new NotificationController();
+                $notification->sendNotification(
+                    $post->user_id,
+                    $user_id,
+                    "A new comment has been added to your post",
+                    $user->name . " commented on your post: " . $content,
+                    "",
+                    "comment"
+                );
 
                 return 1;
             } else {

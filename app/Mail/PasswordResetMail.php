@@ -15,9 +15,10 @@ class PasswordResetMail extends Mailable {
     public $toAddress;
     public $code;
     
-    public function __construct($to, $code)
+    public function __construct($to, $workgroup_url, $code)
     {
         $this->toAddress = $to;
+        $this->workgroup_url = $workgroup_url;
         $this->code = $code;
     }
  
