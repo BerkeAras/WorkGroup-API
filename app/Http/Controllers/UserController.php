@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Http\Exception\HttpResponseException;
 use Illuminate\Support\Facades\DB;
+use Intervention\Image\Facades\Image as Image;
 
 class UserController extends Controller
 {
@@ -25,7 +26,7 @@ class UserController extends Controller
                     ->select('banner', 'avatar')
                     ->where('email', $email)
                     ->get();
-        
+
                 return response()->json($banner);
 
             } else {
@@ -37,7 +38,7 @@ class UserController extends Controller
         }
 
     }
-    
+
     public function uploadBanner(Request $request) {
         if (JWTAuth::parseToken()->authenticate()) {
 
@@ -68,6 +69,13 @@ class UserController extends Controller
                     $upload_name = preg_replace('/\s+/', '-', $upload_name);
 
                     if (move_uploaded_file($banner_tmp_name , $upload_name)) {
+
+                        // Resize image
+                        $img = Image::make($upload_name);
+                        $img->resize(null, 512, function ($constraint) {
+                            $constraint->aspectRatio();
+                        });
+                        $img->save($upload_name, 60);
 
                         DB::table('users')
                             ->where('id', $user_id)
@@ -138,6 +146,11 @@ class UserController extends Controller
                     $upload_name = preg_replace('/\s+/', '-', $upload_name);
 
                     if (move_uploaded_file($avatar_tmp_name , $upload_name)) {
+
+                        // Resize image
+                        $img = Image::make($upload_name);
+                        $img->resize(256, 256);
+                        $img->save($upload_name, 60);
 
                         DB::table('users')
                             ->where('id', $user_id)

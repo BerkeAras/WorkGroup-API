@@ -11,6 +11,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Http\Exception\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\NotificationController;
+use Intervention\Image\Facades\Image as Image;
 
 class ContentController extends Controller
 {
@@ -475,8 +476,16 @@ class ContentController extends Controller
                             $random_name = "pi-" . rand(1000,1000000) . time() . "-" . $image_name;
                             $upload_name = $upload_dir . strtolower($random_name);
                             $upload_name = preg_replace('/\s+/', '-', $upload_name);
-        
+
                             if (move_uploaded_file($image_tmp_name , $upload_name)) {
+
+                                // Resize image
+                                $img = Image::make($upload_name);
+                                $img->resize(null, 1080, function ($constraint) {
+                                    $constraint->aspectRatio();
+                                });
+                                $img->save($upload_name, 60);
+
                                 $response = array(
                                     "status" => "success",
                                     "error" => false,
