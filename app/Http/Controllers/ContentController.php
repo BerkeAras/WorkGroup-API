@@ -136,6 +136,11 @@ class ContentController extends Controller
                 $user = $request->only('user')["user"];
             }
 
+            $id = "%";
+            if (isset($request->only('id')["id"])) {
+                $id = $request->only('id')["id"];
+            }
+
             $group = "%";
             $isGroupMember = false;
             if (isset($request->only('group')["group"])) {
@@ -177,6 +182,7 @@ class ContentController extends Controller
                 ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
                 ->where('users.email', 'LIKE', $user)
                 ->where('posts.group_id', 'LIKE', $group)
+                ->where('posts.id', 'LIKE', $id)
                 ->orderByRaw('posts.created_at DESC')
                 ->skip($start_from)
                 ->take($maxPosts)
@@ -188,6 +194,7 @@ class ContentController extends Controller
                 ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
                 ->where('users.email', 'LIKE', $user)
                 ->where('posts.group_id', 'LIKE', $group)
+                ->where('posts.id', 'LIKE', $id)
                 ->count();
 
             $total_records = $postsCount;
@@ -399,15 +406,17 @@ class ContentController extends Controller
                     ->first();
 
                 // Send notification to user
-                $notification = new NotificationController();
-                $notification->sendNotification(
-                    $post->user_id,
-                    $user_id,
-                    "A new comment has been added to your post",
-                    $user->name . " commented on your post: " . $content,
-                    "",
-                    "comment"
-                );
+                if ($post->user_id !== $user_id) {
+                    $notification = new NotificationController();
+                    $notification->sendNotification(
+                        $post->user_id,
+                        $user_id,
+                        "A new comment has been added to your post",
+                        $user->name . " commented on your post: " . $content,
+                        "/app/post/$post_id",
+                        "comment"
+                    );
+                }
 
                 return 1;
             } else {

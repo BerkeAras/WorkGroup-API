@@ -310,12 +310,24 @@ class SettingsController extends Controller
             $userAdmin = $user->is_admin;
 
             if ($userAdmin == 1) {
-                $users = DB::table('users')
-                    ->select('id', 'name', 'email', 'is_admin', 'created_at', 'updated_at', 'avatar', 'banner', 'cookie_choice', 'account_activated', 'activation_token', 'user_online', 'is_admin', 'user_last_online', 'user_last_ip', 'remember_token')
-                    ->orderBy($orderField, $orderType)
-                    ->skip($start_from)
-                    ->take(10)
-                    ->get();
+
+                if ($orderField == "user_online") {
+                    $users = DB::table('users')
+                        ->select('id', 'name', 'email', 'is_admin', 'created_at', 'updated_at', 'avatar', 'banner', 'cookie_choice', 'account_activated', 'activation_token', 'user_online', 'is_admin', 'user_last_online', 'user_last_ip', 'remember_token')
+                        ->orderBy($orderField, $orderType)
+                        ->orderBy('user_last_online', $orderType)
+                        ->skip($start_from)
+                        ->take(10)
+                        ->get();
+                } else {
+                    $users = DB::table('users')
+                        ->select('id', 'name', 'email', 'is_admin', 'created_at', 'updated_at', 'avatar', 'banner', 'cookie_choice', 'account_activated', 'activation_token', 'user_online', 'is_admin', 'user_last_online', 'user_last_ip', 'remember_token')
+                        ->orderBy($orderField, $orderType)
+                        ->skip($start_from)
+                        ->take(10)
+                        ->get();
+                }
+
 
                 foreach ($users as $user) {
                     $user_information = DB::table('user_information')

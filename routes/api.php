@@ -270,6 +270,20 @@ $api->version('v1', function ($api) {
         'uses' => 'App\Http\Controllers\JobsController@onlineStatus',
     ]);
 
+    // Notifications
+    $api->get('/notifications/getNotifications', [
+        'as' => 'api.notifications.getNotifications',
+        'uses' => 'App\Http\Controllers\NotificationController@getNotifications',
+    ]);
+    $api->get('/notifications/getInAppNotifications', [
+        'as' => 'api.notifications.getInAppNotifications',
+        'uses' => 'App\Http\Controllers\NotificationController@getInAppNotifications',
+    ]);
+    $api->get('/notifications/checkUnreadNotifications', [
+        'as' => 'api.notifications.checkUnreadNotifications',
+        'uses' => 'App\Http\Controllers\NotificationController@checkUnreadNotifications',
+    ]);
+
     // API
     $api->group([
         'namespace' => 'App\Http\Controllers',

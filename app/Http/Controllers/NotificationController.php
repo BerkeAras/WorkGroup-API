@@ -76,4 +76,73 @@ class NotificationController extends Controller
 
         dispatch(new NotificationMailJob($details));
     }
+
+    // Gets the notifications for a user
+    public function getNotifications()
+    {
+
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
+
+        // Get the notifications for the user
+        $notifications = DB::table('notifications')->where('notification_recipient_user_id', $user_id)->orderBy('created_at', 'desc')->get();
+
+        // Return the notifications
+        return $notifications;
+    }
+
+    // Gets the in-app notifications for a user
+    public function getInAppNotifications()
+    {
+
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
+
+        if (isset($_GET["select"])) {
+            if (is_numeric($_GET["select"])) {
+                $select = $_GET["select"];
+            } else {
+                $select = 10;
+            }
+
+            $notifications = DB::table('notifications')
+                                ->where('notification_recipient_user_id', $user_id)
+                                ->where('notification_delivery_type', 'inapp')
+                                ->orderBy('created_at', 'desc')
+                                ->take($select)
+                                ->get()
+                                ->toArray();
+        } else {
+            $notifications = DB::table('notifications')
+                                ->where('notification_recipient_user_id', $user_id)
+                                ->where('notification_delivery_type', 'inapp')
+                                ->orderBy('created_at', 'desc')
+                                ->get()
+                                ->toArray();
+        }
+
+        // Get the user details to the notification
+
+        foreach ($notifications as $notification) {
+            if($notification->notification_sender_user_id != 0) {
+                $user = DB::table('users')->where('id', $notification->notification_sender_user_id)->first();
+                $notification->user = $user;
+            }
+
+            if (isset($_GET["setread"])) {
+                DB::table('notifications')->where('id', $notification->id)->update(['notification_read' => true]);
+            }
+        }
+
+        // Return the notifications
+        return $notifications;
+    }
+
+    // Check unread notifications
+    public function checkUnreadNotifications()
+    {
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
+
+        $unreadNotifications = DB::table('notifications')->where('notification_recipient_user_id', $user_id)->where('notification_delivery_type','inapp')->where('notification_read', false)->count();
+
+        return $unreadNotifications;
+    }
 }
