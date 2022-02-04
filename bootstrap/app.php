@@ -135,6 +135,10 @@ $app->register(PhanAn\CascadingConfig\CascadingConfigServiceProvider::class);
 $app->register(\Illuminate\Mail\MailServiceProvider::class);
 $app->configure('mail');
 
+// Image
+$app->register(Intervention\Image\ImageServiceProvider::class);
+class_alias('Intervention\Image\Facades\Image', 'Image');
+
 $app->configure('filesystems');
 class_alias('Illuminate\Support\Facades\Storage', 'Storage');
 
