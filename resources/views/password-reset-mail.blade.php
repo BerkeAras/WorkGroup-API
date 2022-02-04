@@ -143,7 +143,7 @@
         <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
           <tr>
             <td align="center" valign="top" style="padding: 36px 24px;">
-              <a href="https://sendgrid.com" target="_blank" style="display: inline-block;">
+              <a href="{{ $workgroup_url }}" target="_blank" style="display: inline-block;">
                 <img src="https://raw.githubusercontent.com/BerkeAras/WorkGroup/main/src/static/logo.svg" alt="Logo" border="0" height="45" style="display: block; height:45px;">
               </a>
             </td>

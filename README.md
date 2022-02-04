@@ -132,7 +132,12 @@ This is an example of how to list things you need to use the software and how to
    ```
    or use run-server.bat (windows), run-server.sh (unix)
 
-7. Create CronJob that calls this URL (every 30-60 minutes): `/api/jobs/onlineStatus`
+7. Create following CronJobs:
+    - Call URL: `[API-URL]/api/jobs/onlineStatus` (every 30-60 minutes)
+    - if you run the API on shared hosting:
+        - Execute Code: `php artisan queue:work --timeout=60`
+    - if you can run processes:
+        - Run Code: `php artisan queue:listen`
 
 <!-- ROADMAP -->
 

@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Http\Exception\HttpResponseException;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\NotificationController;
 
 class ContentController extends Controller
 {
@@ -135,6 +136,11 @@ class ContentController extends Controller
                 $user = $request->only('user')["user"];
             }
 
+            $id = "%";
+            if (isset($request->only('id')["id"])) {
+                $id = $request->only('id')["id"];
+            }
+
             $group = "%";
             $isGroupMember = false;
             if (isset($request->only('group')["group"])) {
@@ -176,6 +182,7 @@ class ContentController extends Controller
                 ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
                 ->where('users.email', 'LIKE', $user)
                 ->where('posts.group_id', 'LIKE', $group)
+                ->where('posts.id', 'LIKE', $id)
                 ->orderByRaw('posts.created_at DESC')
                 ->skip($start_from)
                 ->take($maxPosts)
@@ -187,6 +194,7 @@ class ContentController extends Controller
                 ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
                 ->where('users.email', 'LIKE', $user)
                 ->where('posts.group_id', 'LIKE', $group)
+                ->where('posts.id', 'LIKE', $id)
                 ->count();
 
             $total_records = $postsCount;
@@ -386,6 +394,29 @@ class ContentController extends Controller
             $content = str_replace('{{BR}}', '<br>', $content);
 
             if (DB::insert('insert into post_comments (user_id, post_id, comment_content, created_at, updated_at) values (?, ?, ?, ?, ?)', [$user_id, $post_id, $content, $created_at, $updated_at])) {
+
+                // Get Post Owner
+                $post = DB::table('posts')
+                    ->where("id", $post_id)
+                    ->first();
+
+                // Sender
+                $user = DB::table('users')
+                    ->where("id", $user_id)
+                    ->first();
+
+                // Send notification to user
+                if ($post->user_id !== $user_id) {
+                    $notification = new NotificationController();
+                    $notification->sendNotification(
+                        $post->user_id,
+                        $user_id,
+                        "A new comment has been added to your post",
+                        $user->name . " commented on your post: " . $content,
+                        "/app/post/$post_id",
+                        "comment"
+                    );
+                }
 
                 return 1;
             } else {

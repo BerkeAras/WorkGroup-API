@@ -349,8 +349,8 @@ class AuthController extends Controller
             ]);
 
             try {
-                Mail::send(new PasswordResetMail($results->email, $otp));
-            
+                Mail::send(new PasswordResetMail($results->email, env("APP_URL"), $otp));
+
                 return response([
                     'message' => 'Reset success',
                     'token' => $token
@@ -358,7 +358,8 @@ class AuthController extends Controller
             } catch (Exception $ex) {
                 // Debug via $ex->getMessage();
                 return response([
-                    'message' => 'Reset error'
+                    'message' => 'Reset error',
+                    'error' => $ex->getMessage()
                 ]);
             }
 

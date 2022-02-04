@@ -4,7 +4,7 @@
 
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <title>Updates on your group request.</title>
+  <title>{{ $notification_sender_name }} – WorkGroup</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style type="text/css">
   /**
@@ -125,7 +125,7 @@
 
   <!-- start preheader -->
   <div class="preheader" style="display: none; max-width: 0; max-height: 0; overflow: hidden; font-size: 1px; line-height: 1px; color: #fff; opacity: 0;">
-  Updates on your group request.
+  A new notification from {{ $notification_sender_name }}
   </div>
   <!-- end preheader -->
 
@@ -169,7 +169,7 @@
         <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
           <tr>
             <td align="left" bgcolor="#ffffff" style="padding: 36px 24px 0; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; border-top: 3px solid #d4dadf;">
-              <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 48px;">Updates about your Group Request.</h1>
+              <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 48px;">{{ $notification_subject }}</h1>
             </td>
           </tr>
         </table>
@@ -195,7 +195,7 @@
           <!-- start copy -->
           <tr>
             <td align="left" bgcolor="#ffffff" style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;">
-              <p style="margin: 0;">Dear {{ $user_name }},<br><br>Unfortunately, your request for the "{{ $group_title }}" group was denied by an administrator.<p>
+              <p style="margin: 0;">{!! $notification_content !!}<p>
             </td>
           </tr>
           <!-- end copy -->
@@ -221,34 +221,6 @@
       </td>
     </tr>
     <!-- end copy block -->
-
-    <!-- start footer -->
-    <tr>
-      <td align="center" bgcolor="#e9ecef" style="padding: 24px;">
-        <!--[if (gte mso 9)|(IE)]>
-        <table align="center" border="0" cellpadding="0" cellspacing="0" width="600">
-        <tr>
-        <td align="center" valign="top" width="600">
-        <![endif]-->
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
-
-          <!-- start permission -->
-          <tr>
-            <td align="center" bgcolor="#e9ecef" style="padding: 12px 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #666;">
-              <p style="margin: 0;">You received this email because your request has been updated.</p>
-            </td>
-          </tr>
-          <!-- end permission -->
-
-        </table>
-        <!--[if (gte mso 9)|(IE)]>
-        </td>
-        </tr>
-        </table>
-        <![endif]-->
-      </td>
-    </tr>
-    <!-- end footer -->
 
   </table>
   <!-- end body -->
