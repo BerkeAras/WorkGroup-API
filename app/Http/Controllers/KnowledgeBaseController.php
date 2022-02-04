@@ -179,6 +179,12 @@ class KnowledgeBaseController extends Controller
                     ->first();
             }
 
+            if ($file == null) {
+                return response()->json(array(
+                    'error' => 'File not found'
+                ));
+            }
+
 
             // Create activity
             DB::table('knowledge_base_file_activity')->insert([
@@ -236,6 +242,12 @@ class KnowledgeBaseController extends Controller
             $folder = DB::table('knowledge_base_folders')
                 ->where('id', $folder_id)
                 ->first();
+
+            if ($folder == null) {
+                return response()->json(array(
+                    'error' => 'Folder not found'
+                ));
+            }
 
             $folder->permissions = $this->checkParentFolderPermissions($folder_id);
         }
