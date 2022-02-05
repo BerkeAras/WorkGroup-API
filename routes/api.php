@@ -126,7 +126,7 @@ $api->version('v1', function ($api) {
         'as' => 'api.user.storeCookieChoice',
         'uses' => 'App\Http\Controllers\UserController@storeCookieChoice',
     ]);
-    
+
     // Group
     $api->get('/group/getGroupInformation', [
         'as' => 'api.group.getGroupInformation',
@@ -197,6 +197,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.settings.getUsers',
         'uses' => 'App\Http\Controllers\SettingsController@getUsers',
     ]);
+    $api->post('/settings/user', [
+        'as' => 'api.settings.updateUser',
+        'uses' => 'App\Http\Controllers\SettingsController@updateUser',
+    ]);
 
     // KnowledgeBase
     $api->get('/knowledgebase/getFolders', [
@@ -227,6 +231,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.knowledgebase.modifyFolder',
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@modifyFolder',
     ]);
+    $api->post('/knowledgebase/modifyFile', [
+        'as' => 'api.knowledgebase.modifyFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@modifyFile',
+    ]);
     $api->post('/knowledgebase/saveFile', [
         'as' => 'api.knowledgebase.saveFile',
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@saveFile',
@@ -242,6 +250,38 @@ $api->version('v1', function ($api) {
     $api->post('/knowledgebase/uploadFile', [
         'as' => 'api.knowledgebase.uploadFile',
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@uploadFile',
+    ]);
+    $api->post('/knowledgebase/deleteFile', [
+        'as' => 'api.knowledgebase.deleteFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@deleteFile',
+    ]);
+    $api->post('/knowledgebase/deleteFolder', [
+        'as' => 'api.knowledgebase.deleteFolder',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@deleteFolder',
+    ]);
+    $api->post('/knowledgebase/createNewFile', [
+        'as' => 'api.knowledgebase.createNewFile',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@createNewFile',
+    ]);
+
+    // Jobs
+    $api->get('/jobs/onlineStatus', [
+        'as' => 'api.jobs.onlineStatus',
+        'uses' => 'App\Http\Controllers\JobsController@onlineStatus',
+    ]);
+
+    // Notifications
+    $api->get('/notifications/getNotifications', [
+        'as' => 'api.notifications.getNotifications',
+        'uses' => 'App\Http\Controllers\NotificationController@getNotifications',
+    ]);
+    $api->get('/notifications/getInAppNotifications', [
+        'as' => 'api.notifications.getInAppNotifications',
+        'uses' => 'App\Http\Controllers\NotificationController@getInAppNotifications',
+    ]);
+    $api->get('/notifications/checkUnreadNotifications', [
+        'as' => 'api.notifications.checkUnreadNotifications',
+        'uses' => 'App\Http\Controllers\NotificationController@checkUnreadNotifications',
     ]);
 
     // API

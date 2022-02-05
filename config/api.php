@@ -218,6 +218,10 @@ return [
 
         'json' => Dingo\Api\Http\Response\Format\Json::class,
 
+    ],
+
+    'mysql' => [
+        'engine' => env('DB_ENGINE', 'InnoDB'),
     ]
 
 ];

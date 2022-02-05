@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\File;
 
 class KnowledgeBase extends Migration
 {
@@ -19,7 +20,7 @@ class KnowledgeBase extends Migration
             $table->collation = 'utf8mb4_unicode_ci';
             $table->increments('id');
             $table->string('knowledge_base_folder_name', 100);
-            $table->string('knowledge_base_folder_slug', 100)->unique();
+            $table->string('knowledge_base_folder_slug', 100);
             $table->string('knowledge_base_folder_description', 500)->nullable();
             $table->integer('knowledge_base_folder_parent_id')->unsigned()->nullable();
             $table->integer('knowledge_base_folder_user_id')->unsigned();
@@ -46,7 +47,7 @@ class KnowledgeBase extends Migration
             $table->collation = 'utf8mb4_unicode_ci';
             $table->increments('id');
             $table->string('knowledge_base_file_name', 100);
-            $table->string('knowledge_base_file_slug', 100)->unique();
+            $table->string('knowledge_base_file_slug', 100);
             $table->string('knowledge_base_file_extension', 100)->nullable();
             $table->string('knowledge_base_file_description', 500)->nullable();
             $table->string('knowledge_base_file_path')->unique();
@@ -110,6 +111,10 @@ class KnowledgeBase extends Migration
             $table->text('knowledge_base_folder_comment_content');
             $table->timestamps();
         });
+
+        // Create the File
+        $path = resource_path() . '/knowledge-base-data/0-index.md';
+        File::put($path, '# Knowledge Base');
     }
 
     /**

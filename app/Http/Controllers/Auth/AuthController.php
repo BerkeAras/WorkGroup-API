@@ -41,6 +41,16 @@ class AuthController extends Controller
             return $this->onJwtGenerationError();
         }
 
+        // Check if user is activated
+        $user = DB::table("users")
+            ->where("email", $request->only('email')["email"])
+            ->get();
+        $user = $user[0];
+
+        if ($user->account_activated == 0) {
+            return $this->onUnauthorized();
+        }
+
         DB::table("users")
             ->where("email", $request->only('email')["email"])
             ->update([
@@ -245,6 +255,7 @@ class AuthController extends Controller
                     'password' => app('hash')->make($password),
                     'remember_token' => str_random(10),
                     'activation_token' => $token,
+                    'account_activated' => false,
                     'created_at' => date('Y-m-d H:i:s', time()),
                     'updated_at' => date('Y-m-d H:i:s', time())
                 ]);
@@ -258,7 +269,7 @@ class AuthController extends Controller
 
                 try {
                     Mail::send(new RegisterActivationMail($email, env("APP_URL"), $token));
-                
+
                     return response([
                         'message' => 'Register success'
                     ]);
@@ -338,8 +349,8 @@ class AuthController extends Controller
             ]);
 
             try {
-                Mail::send(new PasswordResetMail($results->email, $otp));
-            
+                Mail::send(new PasswordResetMail($results->email, env("APP_URL"), $otp));
+
                 return response([
                     'message' => 'Reset success',
                     'token' => $token
@@ -347,7 +358,8 @@ class AuthController extends Controller
             } catch (Exception $ex) {
                 // Debug via $ex->getMessage();
                 return response([
-                    'message' => 'Reset error'
+                    'message' => 'Reset error',
+                    'error' => $ex->getMessage()
                 ]);
             }
 
@@ -438,7 +450,8 @@ class AuthController extends Controller
                 ->where("id", $user_id)
                 ->update([
                     'user_online' => "1",
-                    'user_last_online' => date('Y-m-d H:i:s', time())
+                    'user_last_online' => date('Y-m-d H:i:s', time()),
+                    'user_last_ip' => $request->ip()
                 ]);
 
             $token = JWTAuth::parseToken();

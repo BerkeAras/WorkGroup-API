@@ -116,7 +116,7 @@ $app->routeMiddleware([
 |
 */
 
-// $app->register(App\Providers\AppServiceProvider::class);
+$app->register(App\Providers\AppServiceProvider::class);
 // $app->register(App\Providers\AuthServiceProvider::class);
 // $app->register(App\Providers\GuardServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
@@ -134,6 +134,10 @@ $app->register(PhanAn\CascadingConfig\CascadingConfigServiceProvider::class);
 // Email Provider
 $app->register(\Illuminate\Mail\MailServiceProvider::class);
 $app->configure('mail');
+
+// Image
+$app->register(Intervention\Image\ImageServiceProvider::class);
+class_alias('Intervention\Image\Facades\Image', 'Image');
 
 $app->configure('filesystems');
 class_alias('Illuminate\Support\Facades\Storage', 'Storage');

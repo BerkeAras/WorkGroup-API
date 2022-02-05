@@ -1,5 +1,6 @@
 /vendor
 .env
+.env.*
 .idea
 /public/static
 .DS_Store

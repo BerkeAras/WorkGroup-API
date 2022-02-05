@@ -198,5 +198,27 @@ class AppSettingsTableSeeder extends Seeder
             "created_at" =>  date('Y-m-d H:i:s'),
             "updated_at" => date('Y-m-d H:i:s'),
         ]);
+        
+        DB::table('app_settings')->insert([
+            'config_key' => 'other.avatar_quality',
+            'config_value' => 'min', // min, medium, max
+            'last_changed_by' => $adminId,
+            "created_at" =>  date('Y-m-d H:i:s'),
+            "updated_at" => date('Y-m-d H:i:s'),
+        ]);
+        DB::table('app_settings')->insert([
+            'config_key' => 'other.banner_quality',
+            'config_value' => 'min', // min, medium, max
+            'last_changed_by' => $adminId,
+            "created_at" =>  date('Y-m-d H:i:s'),
+            "updated_at" => date('Y-m-d H:i:s'),
+        ]);
+        DB::table('app_settings')->insert([
+            'config_key' => 'other.post_image_quality',
+            'config_value' => 'min', // min, medium, max
+            'last_changed_by' => $adminId,
+            "created_at" =>  date('Y-m-d H:i:s'),
+            "updated_at" => date('Y-m-d H:i:s'),
+        ]);
     }
 }

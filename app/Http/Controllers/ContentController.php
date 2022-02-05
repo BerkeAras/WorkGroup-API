@@ -10,6 +10,8 @@ use App\Http\Controllers\Controller;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Http\Exception\HttpResponseException;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\NotificationController;
+use Intervention\Image\Facades\Image as Image;
 
 class ContentController extends Controller
 {
@@ -63,7 +65,6 @@ class ContentController extends Controller
                     'group_id' => $group_id,
                     'post_content' => $content,
                     'status' => $status,
-                    'user_id' => $user_id,
                     'created_at' => $created_at,
                     'updated_at' => $updated_at,
                 ]
@@ -136,6 +137,11 @@ class ContentController extends Controller
                 $user = $request->only('user')["user"];
             }
 
+            $id = "%";
+            if (isset($request->only('id')["id"])) {
+                $id = $request->only('id')["id"];
+            }
+
             $group = "%";
             $isGroupMember = false;
             if (isset($request->only('group')["group"])) {
@@ -177,7 +183,8 @@ class ContentController extends Controller
                 ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
                 ->where('users.email', 'LIKE', $user)
                 ->where('posts.group_id', 'LIKE', $group)
-                ->orderByRaw('posts.id DESC')
+                ->where('posts.id', 'LIKE', $id)
+                ->orderByRaw('posts.created_at DESC')
                 ->skip($start_from)
                 ->take($maxPosts)
                 ->get()
@@ -188,6 +195,7 @@ class ContentController extends Controller
                 ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
                 ->where('users.email', 'LIKE', $user)
                 ->where('posts.group_id', 'LIKE', $group)
+                ->where('posts.id', 'LIKE', $id)
                 ->count();
 
             $total_records = $postsCount;
@@ -388,6 +396,29 @@ class ContentController extends Controller
 
             if (DB::insert('insert into post_comments (user_id, post_id, comment_content, created_at, updated_at) values (?, ?, ?, ?, ?)', [$user_id, $post_id, $content, $created_at, $updated_at])) {
 
+                // Get Post Owner
+                $post = DB::table('posts')
+                    ->where("id", $post_id)
+                    ->first();
+
+                // Sender
+                $user = DB::table('users')
+                    ->where("id", $user_id)
+                    ->first();
+
+                // Send notification to user
+                if ($post->user_id !== $user_id) {
+                    $notification = new NotificationController();
+                    $notification->sendNotification(
+                        $post->user_id,
+                        $user_id,
+                        "A new comment has been added to your post",
+                        $user->name . " commented on your post: " . $content,
+                        "/app/post/$post_id",
+                        "comment"
+                    );
+                }
+
                 return 1;
             } else {
                 return 0;
@@ -427,7 +458,7 @@ class ContentController extends Controller
                     );
                 } else {
 
-                    $allowed = array("image/jpeg", "image/jpg", "image/tiff", "image/gif", "image/png");
+                    $allowed = array("image/jpeg", "image/jpg", "image/tiff", "image/gif", "image/png", "image/svg");
                     if(!in_array($file_type, $allowed)) {
                         $response = array(
                             "status" => "error",
@@ -445,8 +476,28 @@ class ContentController extends Controller
                             $random_name = "pi-" . rand(1000,1000000) . time() . "-" . $image_name;
                             $upload_name = $upload_dir . strtolower($random_name);
                             $upload_name = preg_replace('/\s+/', '-', $upload_name);
-        
+
                             if (move_uploaded_file($image_tmp_name , $upload_name)) {
+
+                                // Get Compression Setting
+                                $postImageQuality = DB::table('app_settings')
+                                    ->where('config_key','other.post_image_quality')
+                                    ->first();
+
+                                if ($postImageQuality->config_value == "min") {
+                                    $img = Image::make($upload_name);
+                                    $img->resize(null, 512, function ($constraint) {
+                                        $constraint->aspectRatio();
+                                    });
+                                    $img->save($upload_name, 40);
+                                } elseif ($postImageQuality->config_value == "medium") {
+                                    $img = Image::make($upload_name);
+                                    $img->resize(null, 720, function ($constraint) {
+                                        $constraint->aspectRatio();
+                                    });
+                                    $img->save($upload_name, 60);
+                                }
+
                                 $response = array(
                                     "status" => "success",
                                     "error" => false,
