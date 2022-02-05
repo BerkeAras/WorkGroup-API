@@ -269,7 +269,7 @@ class AuthController extends Controller
 
                 try {
                     Mail::send(new RegisterActivationMail($email, env("APP_URL"), $token));
-                
+
                     return response([
                         'message' => 'Register success'
                     ]);

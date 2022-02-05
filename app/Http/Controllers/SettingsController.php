@@ -30,6 +30,9 @@ class SettingsController extends Controller
             ->orWhere('config_key','analytics.google_analytics.key')
             ->orWhere('config_key','analytics.sentry.enabled')
             ->orWhere('config_key','analytics.sentry.dsn')
+            ->orWhere('config_key','other.avatar_quality')
+            ->orWhere('config_key','other.banner_quality')
+            ->orWhere('config_key','other.post_image_quality')
             ->get();
 
         try {
