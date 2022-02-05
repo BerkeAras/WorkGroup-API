@@ -23,6 +23,7 @@ class SettingsController extends Controller
             ->orWhere('config_key','app.url')
             ->orWhere('config_key','app.registration_enabled')
             ->orWhere('config_key','app.password_reset_enabled')
+            ->orWhere('config_key','app.group_creation_enabled')
             ->orWhere('config_key','app.minimum_search_length')
             ->orWhere('config_key','app.maximum_posts_per_page')
             ->orWhere('config_key','server.api_url')
@@ -37,30 +38,30 @@ class SettingsController extends Controller
 
         try {
             $user = JWTAuth::parseToken()->authenticate();
-            
+
             if (JWTAuth::parseToken()->authenticate()) {
                 $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
-    
+
                 $user = DB::table('users')->where('id', $user_id)->first();
                 $userAdmin = $user->is_admin;
-    
+
                 if ($userAdmin == 1) {
                     $settings = DB::table('app_settings')->get();
                     return new JsonResponse($settings);
                 } else {
-                    
+
                     return new JsonResponse($defaultConfig);
-    
+
                 }
             } else {
-                
+
                 return new JsonResponse($defaultConfig);
-    
+
             }
         } catch (JWTException $e) {
             return new JsonResponse($defaultConfig);
         }
-        
+
 
     }
 
@@ -69,15 +70,15 @@ class SettingsController extends Controller
 
         try {
             $user = JWTAuth::parseToken()->authenticate();
-            
+
             if (JWTAuth::parseToken()->authenticate()) {
                 $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
-    
+
                 $user = DB::table('users')->where('id', $user_id)->first();
                 $userAdmin = $user->is_admin;
-    
+
                 if ($userAdmin == 1) {
-                    
+
                     $settings = DB::table('app_settings')->get();
 
                     $totalAffectedRows = 0;
@@ -196,7 +197,7 @@ class SettingsController extends Controller
                                 "message" => "Error uploading the file!"
                             );
                         }
-                    }    
+                    }
 
                 } else {
                     $response = array(
