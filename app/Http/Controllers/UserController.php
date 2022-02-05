@@ -149,7 +149,9 @@ class UserController extends Controller
 
                         // Resize image
                         $img = Image::make($upload_name);
-                        $img->resize(256, 256);
+                        $img->resize(null, 256, function ($constraint) {
+                            $constraint->aspectRatio();
+                        });
                         $img->save($upload_name, 60);
 
                         DB::table('users')
