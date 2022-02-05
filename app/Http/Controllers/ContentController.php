@@ -479,12 +479,24 @@ class ContentController extends Controller
 
                             if (move_uploaded_file($image_tmp_name , $upload_name)) {
 
-                                // Resize image
-                                $img = Image::make($upload_name);
-                                $img->resize(null, 1080, function ($constraint) {
-                                    $constraint->aspectRatio();
-                                });
-                                $img->save($upload_name, 60);
+                                // Get Compression Setting
+                                $postImageQuality = DB::table('app_settings')
+                                    ->where('config_key','other.post_image_quality')
+                                    ->first();
+
+                                if ($postImageQuality->config_value == "min") {
+                                    $img = Image::make($upload_name);
+                                    $img->resize(null, 512, function ($constraint) {
+                                        $constraint->aspectRatio();
+                                    });
+                                    $img->save($upload_name, 40);
+                                } elseif ($postImageQuality->config_value == "medium") {
+                                    $img = Image::make($upload_name);
+                                    $img->resize(null, 720, function ($constraint) {
+                                        $constraint->aspectRatio();
+                                    });
+                                    $img->save($upload_name, 60);
+                                }
 
                                 $response = array(
                                     "status" => "success",
