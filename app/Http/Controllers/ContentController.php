@@ -142,6 +142,11 @@ class ContentController extends Controller
                 $id = $request->only('id')["id"];
             }
 
+            $hashtag = "%";
+            if (isset($request->only('hashtag')["hashtag"])) {
+                $hashtag = $request->only('hashtag')["hashtag"];
+            }
+
             $group = "%";
             $isGroupMember = false;
             if (isset($request->only('group')["group"])) {
@@ -179,11 +184,21 @@ class ContentController extends Controller
 	        $start_from = ($page-1) * $maxPosts; // 20 Items per page
 
             $posts = DB::table('posts')
-                ->join('users', 'users.id', '=', 'posts.user_id')
-                ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
-                ->where('users.email', 'LIKE', $user)
-                ->where('posts.group_id', 'LIKE', $group)
-                ->where('posts.id', 'LIKE', $id)
+                ->join('users', 'users.id', '=', 'posts.user_id');
+
+            if ($hashtag == "%") {
+                $posts = $posts->select('posts.*', 'users.name', 'users.avatar', 'users.email');
+                $posts = $posts->where('users.email', 'LIKE', $user);
+                $posts = $posts->where('posts.group_id', 'LIKE', $group);
+                $posts = $posts->where('posts.id', 'LIKE', $id);
+            } else {
+                $posts = $posts->leftJoin('post_topics', 'posts.id', '=', 'post_topics.post_id');
+                $posts = $posts->select('posts.*', 'users.name', 'users.avatar', 'users.email', 'post_topics.post_id', 'post_topics.topic');
+                $posts = $posts->where('post_topics.topic', $hashtag);
+                $posts = $posts->groupBy('posts.id');
+            }
+
+            $posts = $posts
                 ->orderByRaw('posts.created_at DESC')
                 ->skip($start_from)
                 ->take($maxPosts)
@@ -191,12 +206,22 @@ class ContentController extends Controller
                 ->toArray();
 
             $postsCount = DB::table('posts')
-                ->join('users', 'users.id', '=', 'posts.user_id')
-                ->select('posts.*', 'users.name', 'users.avatar', 'users.email')
-                ->where('users.email', 'LIKE', $user)
-                ->where('posts.group_id', 'LIKE', $group)
-                ->where('posts.id', 'LIKE', $id)
-                ->count();
+                ->join('users', 'users.id', '=', 'posts.user_id');
+
+                if ($hashtag == "%") {
+                    $postsCount = $postsCount->select('posts.*', 'users.name', 'users.avatar', 'users.email');
+                    $postsCount = $postsCount->where('users.email', 'LIKE', $user);
+                    $postsCount = $postsCount->where('users.email', 'LIKE', $user);
+                    $postsCount = $postsCount->where('posts.group_id', 'LIKE', $group);
+                    $postsCount = $postsCount->where('posts.id', 'LIKE', $id);
+                } else {
+                    $postsCount = $postsCount->leftJoin('post_topics', 'posts.id', '=', 'post_topics.post_id');
+                    $postsCount = $postsCount->select('posts.*', 'users.name', 'users.avatar', 'users.email', 'post_topics.post_id', 'post_topics.topic');
+                    $postsCount = $postsCount->where('post_topics.topic', $hashtag);
+                    $postsCount = $postsCount->groupBy('posts.id');
+                }
+
+            $postsCount = $postsCount->count();
 
             $total_records = $postsCount;
             $total_pages = ceil($total_records / $maxPosts);
