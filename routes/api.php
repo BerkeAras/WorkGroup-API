@@ -263,6 +263,22 @@ $api->version('v1', function ($api) {
         'as' => 'api.knowledgebase.createNewFile',
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@createNewFile',
     ]);
+    $api->get('/knowledgebase/getPermissions', [
+        'as' => 'api.knowledgebase.getPermissions',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@getPermissions',
+    ]);
+    $api->post('/knowledgebase/modifyPermission', [
+        'as' => 'api.knowledgebase.modifyPermission',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@modifyPermission',
+    ]);
+    $api->post('/knowledgebase/removePermission', [
+        'as' => 'api.knowledgebase.removePermission',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@removePermission',
+    ]);
+    $api->post('/knowledgebase/createPermission', [
+        'as' => 'api.knowledgebase.createPermission',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@createPermission',
+    ]);
 
     // Jobs
     $api->get('/jobs/onlineStatus', [

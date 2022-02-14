@@ -35,8 +35,21 @@ class KnowledgeBaseController extends Controller
             "updated_at" => date('Y-m-d H:i:s'),
         ]);
 
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
         $folders = DB::table('knowledge_base_folders')
-            ->where('knowledge_base_folder_parent_id', $folder_parent_id)
+            ->join('knowledge_base_permissions', 'knowledge_base_folders.id', '=', 'knowledge_base_permissions.knowledge_base_permission_folder_id')
+            ->select(
+                'knowledge_base_folders.*',
+                'knowledge_base_permissions.knowledge_base_permission_user_id',
+                'knowledge_base_permissions.knowledge_base_permission_folder_id',
+                'knowledge_base_permissions.knowledge_base_permission_read'
+            )
+            ->where('knowledge_base_folders.knowledge_base_folder_parent_id', $folder_parent_id)
+            ->where('knowledge_base_permissions.knowledge_base_permission_read', 1)
+            ->where(function ($query) use ($user_id) {
+                $query->where('knowledge_base_permissions.knowledge_base_permission_user_id', $user_id)
+                    ->orWhere('knowledge_base_permissions.knowledge_base_permission_user_id', 0);
+            })
             ->get();
 
         return response()->json($folders);
@@ -103,6 +116,7 @@ class KnowledgeBaseController extends Controller
 
         if ($user_is_admin == 1) {
             return array(
+                'read' => true,
                 'write' => true,
                 'delete' => true,
                 'modify' => true
@@ -111,22 +125,29 @@ class KnowledgeBaseController extends Controller
             $folder_permissions = DB::table('knowledge_base_permissions')
                 ->where('knowledge_base_permission_folder_id', $folder_id)
                 ->where(function ($query) {
-                    $query->where('knowledge_base_permission_user_id', JWTAuth::parseToken()->authenticate()->id)
-                    ->orWhere('knowledge_base_permission_user_id', 0);
+                    $query->where('knowledge_base_permission_user_id', 0)
+                    ->orWhere('knowledge_base_permission_user_id', JWTAuth::parseToken()->authenticate()->id);
                 })
+                ->orderBy('knowledge_base_permission_user_id', 'desc')
                 ->first();
 
             if ($folder_permissions == null || $parentIsNull == true) {
                 return array(
+                    'read' => false,
                     'write' => false,
                     'delete' => false,
                     'modify' => false
                 );
             } else {
 
+                $readPermission = false;
                 $writePermission = false;
                 $deletePermission = false;
                 $modifyPermission = false;
+
+                if ($folder_permissions->knowledge_base_permission_read == 1) {
+                    $readPermission = true;
+                }
 
                 if ($folder_permissions->knowledge_base_permission_write == 1) {
                     $writePermission = true;
@@ -141,6 +162,7 @@ class KnowledgeBaseController extends Controller
                 }
 
                 return array(
+                    'read' => $readPermission,
                     'write' => $writePermission,
                     'delete' => $deletePermission,
                     'modify' => $modifyPermission
@@ -399,6 +421,7 @@ class KnowledgeBaseController extends Controller
     {
         $folder_name = trim($request->input('folder_name'));
         $folder_parent_id = trim($request->input('folder_parent_id'));
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
 
         if ($folder_name == '') {
             return response()->json(array(
@@ -456,11 +479,14 @@ class KnowledgeBaseController extends Controller
         $folder_id = DB::getPdo()->lastInsertId();
 
         // Permissions
+
         DB::table('knowledge_base_permissions')->insert([
-            'knowledge_base_permission_user_id' => 0, // All Users
+            'knowledge_base_permission_user_id' => ($request->input('create_permission') == "true" ? 0 : $user_id), // All Users
             'knowledge_base_permission_folder_id' => $folder_id,
+            'knowledge_base_permission_read' => 1,
             'knowledge_base_permission_write' => 1,
             'knowledge_base_permission_delete' => 1,
+            'knowledge_base_permission_modify' => 1,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
@@ -500,16 +526,18 @@ class KnowledgeBaseController extends Controller
             ->where('id', $folder_id)
             ->first();
 
-        $existingFolder = DB::table('knowledge_base_folders')
-            ->where('knowledge_base_folder_name', $folder_name)
-            ->where('knowledge_base_folder_parent_id', $folder->knowledge_base_folder_parent_id)
-            ->count();
-
-        if ($existingFolder > 0) {
-            return response()->json(array(
-                'success' => false,
-                'error' => 'The Folder name already exists. Please enter a different folder name.'
-            ));
+        if ($folder->knowledge_base_folder_name !== $folder_name) {
+            $existingFolder = DB::table('knowledge_base_folders')
+                ->where('knowledge_base_folder_name', $folder_name)
+                ->where('knowledge_base_folder_parent_id', $folder->knowledge_base_folder_parent_id)
+                ->count();
+    
+            if ($existingFolder > 0) {
+                return response()->json(array(
+                    'success' => false,
+                    'error' => 'The Folder name already exists. Please enter a different folder name.'
+                ));
+            }
         }
 
 
@@ -1149,5 +1177,160 @@ class KnowledgeBaseController extends Controller
         );
 
         return response()->json($response);
+    }
+
+    // Get Folder Permissions
+    public function getPermissions(Request $request) {
+        $folder_id = $request->input('folder_id');
+
+        $permissions = DB::table('knowledge_base_permissions')
+            ->where('knowledge_base_permission_folder_id', $folder_id)
+            ->get()
+            ->toArray();
+
+        // Get Users
+        foreach ($permissions as $key => $permission) {
+            $user = DB::table('users')
+                ->where('id', $permission->knowledge_base_permission_user_id)
+                ->first();
+
+            $permissions[$key]->user = $user;
+        }
+
+        return response()->json(array(
+            "status" => "success",
+            "error" => false,
+            "message" => "",
+            "permissions" => $permissions
+        ));
+    }
+
+    // Modify Folder Permissions
+    public function modifyPermission(Request $request) {
+        $folder_id = $request->input('folder_id');
+        $user_id = $request->input('user_id');
+
+
+        // Update Permission
+        DB::table('knowledge_base_permissions')
+            ->where('knowledge_base_permission_folder_id', $folder_id)
+            ->where('knowledge_base_permission_user_id', $user_id)
+            ->update([
+                'knowledge_base_permission_read' => ($request->input('read_permission') == "true" ? true : false),
+                'knowledge_base_permission_write' => ($request->input('create_permission') == "true" ? true : false),
+                'knowledge_base_permission_modify' => ($request->input('modify_permission') == "true" ? true : false),
+                'knowledge_base_permission_delete' => ($request->input('delete_permission') == "true" ? true : false),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+
+        // Create Activity
+        DB::table('knowledge_base_folder_activity')->insert([
+            'knowledge_base_folder_activity_user_id' => JWTAuth::parseToken()->authenticate()->id,
+            'knowledge_base_folder_activity_folder_id' => $folder_id,
+            'knowledge_base_folder_activity_action' => 'modify_folder_permissions',
+            "created_at" => date('Y-m-d H:i:s'),
+            "updated_at" => date('Y-m-d H:i:s'),
+        ]);
+
+        return response()->json(array(
+            "status" => "success",
+            "error" => false,
+            "message" => ""
+        ));
+    }
+
+    // Remove Folder Permission
+    public function removePermission(Request $request) {
+        $folder_id = $request->input('folder_id');
+        $user_id = $request->input('user_id');
+
+        // Remove Permission
+        DB::table('knowledge_base_permissions')
+            ->where('knowledge_base_permission_folder_id', $folder_id)
+            ->where('knowledge_base_permission_user_id', $user_id)
+            ->delete();
+
+        // Create Activity
+        DB::table('knowledge_base_folder_activity')->insert([
+            'knowledge_base_folder_activity_user_id' => JWTAuth::parseToken()->authenticate()->id,
+            'knowledge_base_folder_activity_folder_id' => $folder_id,
+            'knowledge_base_folder_activity_action' => 'remove_folder_permissions',
+            "created_at" => date('Y-m-d H:i:s'),
+            "updated_at" => date('Y-m-d H:i:s'),
+        ]);
+
+        return response()->json(array(
+            "status" => "success",
+            "error" => false,
+            "message" => ""
+        ));
+    }
+
+    // Create Folder Permission
+    public function createPermission(Request $request) {
+
+        $folder_id = $request->input('folder_id');
+
+        if ($request->input('user_email') == '0') {
+            $user = 0;
+        } else {
+            // Get User by E-Mail
+            $user = DB::table('users')
+                ->where('email', $request->input('user_email'))
+                ->first();
+
+            if ($user == null) {
+                return response()->json(array(
+                    "status" => "error",
+                    "error" => true,
+                    "message" => 'The User does not exist. Please enter a valid User E-Mail.'
+                ));
+            }
+
+            $user = $user->id;
+        }
+
+
+
+        // Check if User already has a permission
+        $permission = DB::table('knowledge_base_permissions')
+            ->where('knowledge_base_permission_folder_id', $folder_id)
+            ->where('knowledge_base_permission_user_id', $user)
+            ->first();
+
+        if ($permission != null) {
+            return response()->json(array(
+                "status" => "error",
+                "error" => true,
+                "message" => 'The User already has a permission for this Folder.'
+            ));
+        }
+
+        // Create Permission
+        DB::table('knowledge_base_permissions')->insert([
+            'knowledge_base_permission_user_id' => $user,
+            'knowledge_base_permission_folder_id' => $folder_id,
+            'knowledge_base_permission_read' => 1,
+            'knowledge_base_permission_write' => 1,
+            'knowledge_base_permission_delete' => 0,
+            'knowledge_base_permission_modify' => 0,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        // Create activity
+        DB::table('knowledge_base_folder_activity')->insert([
+            'knowledge_base_folder_activity_user_id' => JWTAuth::parseToken()->authenticate()->id,
+            'knowledge_base_folder_activity_folder_id' => $folder_id,
+            'knowledge_base_folder_activity_action' => 'create_permission',
+            "created_at" => date('Y-m-d H:i:s'),
+            "updated_at" => date('Y-m-d H:i:s'),
+        ]);
+
+        return response()->json(array(
+            "status" => "success",
+            "error" => false,
+            "message" => ''
+        ));
     }
 }

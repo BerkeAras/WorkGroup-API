@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\GroupRequestMail;
 use App\Mail\GroupRequestApprovedMail;
 use App\Mail\GroupRequestRejectedMail;
+use App\Http\Controllers\NotificationController;
 
 class GroupController extends Controller
 {
@@ -178,7 +179,21 @@ class GroupController extends Controller
                         ->where('id',$admin_user_id)
                         ->get();
 
-                    Mail::send(new GroupRequestMail($admin_user[0]->email, env("APP_URL"), $request_user->name,$request_user->email,$group[0]->group_title,$group_id,$requestInsertId));
+                    // Check if admin wants emails or in-app notifications.
+                    if ($admin_user[0]->notification_delivery_type == 'email') {
+                        Mail::send(new GroupRequestMail($admin_user[0]->email, env("APP_URL"), $request_user->name,$request_user->email,$group[0]->group_title,$group_id,$requestInsertId));
+                    } else {
+                        $notification = new NotificationController();
+                        $notification->sendNotification(
+                            $admin_user[0]->id,
+                            $user_id,
+                            "A new Group Request!",
+                            '"' . $request_user->name . '" (' . $request_user->email . ') wants to join your Group "' . $group[0]->group_title . '". Do you want to accept this request?',
+                            "/app/group/$group_id?requests",
+                            "group_requests"
+                        );
+                    }
+
 
                 }
 
@@ -686,6 +701,8 @@ class GroupController extends Controller
                 } else {
 
                     $allRequests = DB::table('group_requests')
+                        ->join('users', 'group_requests.user_id', '=', 'users.id')
+                        ->select('users.name', 'group_requests.*')
                         ->where([
                             ['group_id', $group_id],
                             ['status', 'pending']

@@ -35,6 +35,7 @@ class KnowledgeBase extends Migration
             $table->increments('id');
             $table->integer('knowledge_base_permission_user_id');
             $table->integer('knowledge_base_permission_folder_id')->unsigned();
+            $table->boolean('knowledge_base_permission_read')->default(0);
             $table->boolean('knowledge_base_permission_write')->default(0);
             $table->boolean('knowledge_base_permission_delete')->default(0);
             $table->boolean('knowledge_base_permission_modify')->default(0);

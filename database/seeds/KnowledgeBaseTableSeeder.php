@@ -34,6 +34,7 @@ class KnowledgeBaseTableSeeder extends Seeder
         DB::table('knowledge_base_permissions')->insert([
             'knowledge_base_permission_user_id' => 1,
             'knowledge_base_permission_folder_id' => 1,
+            'knowledge_base_permission_read' => 1,
             'knowledge_base_permission_write' => 1,
             'knowledge_base_permission_delete' => 1,
             'knowledge_base_permission_modify' => 1,
