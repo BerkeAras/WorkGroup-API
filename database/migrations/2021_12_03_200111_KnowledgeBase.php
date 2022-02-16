@@ -113,6 +113,19 @@ class KnowledgeBase extends Migration
             $table->timestamps();
         });
 
+        // KnowledgeBase File Downloads
+        Schema::create('knowledge_base_file_downloads', function (Blueprint $table) {
+            $table->charset = 'utf8mb4';
+            $table->collation = 'utf8mb4_unicode_ci';
+            $table->increments('id');
+            $table->integer('knowledge_base_file_download_user_id')->unsigned();
+            $table->integer('knowledge_base_file_download_file_id')->unsigned();
+            $table->text('knowledge_base_file_download_token')->nullable();
+            $table->boolean('knowledge_base_file_download_status')->default(0);
+            $table->timestamp('knowledge_base_file_download_time')->nullable();
+            $table->timestamps();
+        });
+
         // Create the File
         $path = resource_path() . '/knowledge-base-data/0-index.md';
         File::put($path, '# Knowledge Base');
@@ -133,5 +146,6 @@ class KnowledgeBase extends Migration
         Schema::drop('knowledge_base_file_activity');
         Schema::drop('knowledge_base_folder_activity');
         Schema::drop('knowledge_base_folder_comments');
+        Schema::drop('knowledge_base_file_downloads');
     }
 }

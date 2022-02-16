@@ -219,6 +219,10 @@ $api->version('v1', function ($api) {
         'as' => 'api.knowledgebase.getFolder',
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@getFolder',
     ]);
+    $api->get('/knowledgebase/createDownloadToken', [
+        'as' => 'api.knowledgebase.createDownloadToken',
+        'uses' => 'App\Http\Controllers\KnowledgeBaseController@createDownloadToken',
+    ]);
     $api->get('/knowledgebase/readFile', [
         'as' => 'api.knowledgebase.readFile',
         'uses' => 'App\Http\Controllers\KnowledgeBaseController@readFile',

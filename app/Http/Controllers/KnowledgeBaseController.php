@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse\header;
 
 class KnowledgeBaseController extends Controller
 {
@@ -278,6 +280,39 @@ class KnowledgeBaseController extends Controller
         return response()->json($folder);
     }
 
+    // Creates download-token
+    public function createDownloadToken(Request $request) {
+        $user_id = JWTAuth::parseToken()->authenticate()->id;
+        $file_id = $request->input('file_id');
+
+        $token = str_random(20) . time() . $user_id . $file_id;
+
+        // Get File
+        $file = DB::table('knowledge_base_files')
+            ->where('id', $file_id)
+            ->first();
+
+        $file_permissions = $this->checkParentFolderPermissions($file->knowledge_base_file_folder_id);
+
+        if (!$file_permissions["read"]) {
+            return response()->json(array(
+                'error' => 'You do not have permission to read this file'
+            ));
+        }
+
+        DB::table('knowledge_base_file_downloads')->insert([
+            'knowledge_base_file_download_user_id' => $user_id,
+            'knowledge_base_file_download_file_id' => $file_id,
+            'knowledge_base_file_download_token' => $token,
+            "created_at" => date('Y-m-d H:i:s'),
+            "updated_at" => date('Y-m-d H:i:s'),
+        ]);
+
+        return response()->json(array(
+            'token' => $token
+        ));
+    }
+
     // Reads file
     public function readFile(Request $request)
     {
@@ -316,21 +351,26 @@ class KnowledgeBaseController extends Controller
             }
 
 
-            // Create activity
-            DB::table('knowledge_base_file_activity')->insert([
-                'knowledge_base_file_activity_user_id' => JWTAuth::parseToken()->authenticate()->id,
-                'knowledge_base_file_activity_file_id' => $file_id,
-                'knowledge_base_file_activity_action' => 'read_file',
-                "created_at" => date('Y-m-d H:i:s'),
-                "updated_at" => date('Y-m-d H:i:s'),
-            ]);
-
             $file->file_readable = $this->isFileReadable($file->knowledge_base_file_extension);
 
-            $file_permissions = $this->checkParentFolderPermissions($file->knowledge_base_file_folder_id);
-
-
             if ($this->isFileReadable($file->knowledge_base_file_extension)) {
+
+                // Create activity
+                DB::table('knowledge_base_file_activity')->insert([
+                    'knowledge_base_file_activity_user_id' => JWTAuth::parseToken()->authenticate()->id,
+                    'knowledge_base_file_activity_file_id' => $file_id,
+                    'knowledge_base_file_activity_action' => 'read_file',
+                    "created_at" => date('Y-m-d H:i:s'),
+                    "updated_at" => date('Y-m-d H:i:s'),
+                ]);
+
+                $file_permissions = $this->checkParentFolderPermissions($file->knowledge_base_file_folder_id);
+
+                if (!$file_permissions["read"]) {
+                    return response()->json(array(
+                        'error' => 'You do not have permission to read this file'
+                    ));
+                }
 
                 $imageTypes = array(
                     'jpg',
@@ -355,14 +395,44 @@ class KnowledgeBaseController extends Controller
 
             } else {
 
-                $file = File::get($path);
-                $type = File::mimeType($path);
-                $response = Response::make($file, 200);
-                $response->header("Content-Type", $type)
-                    ->header("Content-Disposition", "inline")
-                    ->header("filename", $path)
-                    ->header("Content-Transfer-Encoding", "binary");
-                return $response;
+                // Get Token
+                $token = $request->input('token');
+
+                // Check if token is valid
+                $token_valid = DB::table('knowledge_base_file_downloads')
+                    ->where('knowledge_base_file_download_token', $token)
+                    ->where('knowledge_base_file_download_file_id', $file_id)
+                    ->where('knowledge_base_file_download_status', 0)
+                    ->first();
+
+                if ($token_valid == null) {
+                    return response()->json(array(
+                        'error' => 'Invalid token'
+                    ));
+                }
+
+                header("Content-disposition: attachment; filename=" . $file->knowledge_base_file_name . '.' . $file->knowledge_base_file_extension);
+                header("Content-type: " . mime_content_type($path));
+
+                // Set download as read
+                DB::table('knowledge_base_file_downloads')
+                    ->where('knowledge_base_file_download_token', $token)
+                    ->where('knowledge_base_file_download_file_id', $file_id)
+                    ->update([
+                        'knowledge_base_file_download_time' => date('Y-m-d H:i:s'),
+                        'knowledge_base_file_download_status' => 1
+                    ]);
+
+                // Create activity
+                DB::table('knowledge_base_file_activity')->insert([
+                    'knowledge_base_file_activity_user_id' => $token_valid->knowledge_base_file_download_user_id,
+                    'knowledge_base_file_activity_file_id' => $file_id,
+                    'knowledge_base_file_activity_action' => 'download_file',
+                    "created_at" => date('Y-m-d H:i:s'),
+                    "updated_at" => date('Y-m-d H:i:s'),
+                ]);
+
+                return readfile($path);
 
             }
         } else {
