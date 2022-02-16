@@ -50,6 +50,7 @@ class KnowledgeBaseController extends Controller
                 $query->where('knowledge_base_permissions.knowledge_base_permission_user_id', $user_id)
                     ->orWhere('knowledge_base_permissions.knowledge_base_permission_user_id', 0);
             })
+            ->groupBy('knowledge_base_folders.id')
             ->get();
 
         return response()->json($folders);
