@@ -80,6 +80,14 @@ $api->version('v1', function ($api) {
         'as' => 'api.content.likePost',
         'uses' => 'App\Http\Controllers\ContentController@likePost',
     ]);
+    $api->post('/content/likeComment', [
+        'as' => 'api.content.likeComment',
+        'uses' => 'App\Http\Controllers\ContentController@likeComment',
+    ]);
+    $api->get('/content/getCommentLikes', [
+        'as' => 'api.content.getCommentLikes',
+        'uses' => 'App\Http\Controllers\ContentController@getCommentLikes',
+    ]);
     $api->get('/content/getComments', [
         'as' => 'api.content.getComments',
         'uses' => 'App\Http\Controllers\ContentController@getComments',
@@ -99,6 +107,22 @@ $api->version('v1', function ($api) {
     $api->post('/content/reportPost', [
         'as' => 'api.content.reportPost',
         'uses' => 'App\Http\Controllers\ContentController@reportPost',
+    ]);
+    $api->post('/content/pinPost', [
+        'as' => 'api.content.pinPost',
+        'uses' => 'App\Http\Controllers\ContentController@pinPost',
+    ]);
+    $api->post('/content/togglePostStatus', [
+        'as' => 'api.content.togglePostStatus',
+        'uses' => 'App\Http\Controllers\ContentController@togglePostStatus',
+    ]);
+    $api->post('/content/clearComments', [
+        'as' => 'api.content.clearComments',
+        'uses' => 'App\Http\Controllers\ContentController@clearComments',
+    ]);
+    $api->post('/content/clearLikes', [
+        'as' => 'api.content.clearLikes',
+        'uses' => 'App\Http\Controllers\ContentController@clearLikes',
     ]);
 
     // User

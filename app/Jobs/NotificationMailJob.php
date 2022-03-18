@@ -38,7 +38,8 @@ class NotificationMailJob implements ShouldQueue
             $this->details['sender_name'],
             $this->details['recipient_name'],
             $this->details['subject'],
-            $this->details['content']
+            $this->details['content'],
+            $this->details['link']
         );
         Mail::to($this->details['email'])->send($email);
     }

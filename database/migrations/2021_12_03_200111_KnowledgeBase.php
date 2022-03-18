@@ -127,6 +127,9 @@ class KnowledgeBase extends Migration
         });
 
         // Create the File
+        if (!file_exists(resource_path() . '/knowledge-base-data')) {
+            mkdir(resource_path() . '/knowledge-base-data', 0777, true);
+        }
         $path = resource_path() . '/knowledge-base-data/0-index.md';
         File::put($path, '# Knowledge Base');
     }

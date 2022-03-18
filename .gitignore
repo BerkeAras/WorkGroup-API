@@ -3,6 +3,7 @@
 .env.*
 .idea
 /public/static
+!/public/static/default_logo.svg
 .DS_Store
 resources/knowledge-base-data/*
 *.icloud

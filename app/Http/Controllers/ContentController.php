@@ -198,8 +198,15 @@ class ContentController extends Controller
                 $posts = $posts->groupBy('posts.id');
             }
 
+            $currentUser = DB::table('users')->where('id', $user_id)->first();
+            $userAdmin = $currentUser->is_admin;
+
+            if ($userAdmin == 0) {
+                $posts = $posts->where('posts.status', true);
+            }
+
             $posts = $posts
-                ->orderByRaw('posts.created_at DESC')
+                ->orderByRaw('posts.is_pinned DESC, posts.created_at DESC')
                 ->skip($start_from)
                 ->take($maxPosts)
                 ->get()
@@ -340,6 +347,25 @@ class ContentController extends Controller
         }
 
     }
+
+    public function getCommentLikes(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            if (!isset($request->only('id')["id"])) {
+                return 0;
+            }
+
+            $likes = DB::table('post_comment_likes')
+                ->where("comment_id", $request->only('id')["id"])
+                ->get()
+                ->count();
+    
+            return $likes;
+
+        }
+
+    }
     
     public function likePost(Request $request) {
 
@@ -377,6 +403,44 @@ class ContentController extends Controller
         }
 
     }
+    public function likeComment(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            if (!isset($request->only('id')["id"])) {
+                return "unliked";
+            }
+
+            $likes = DB::table('post_comment_likes')
+                ->where("comment_id", $request->only('id')["id"])
+                ->where("user_id", json_decode(JWTAuth::parseToken()->authenticate(), true)["id"])
+                ->get()
+                ->count();
+
+            if ($likes == 0) {
+                DB::table('post_comment_likes')
+                    ->insert(
+                        [
+                            'comment_id' => $request->only('id')["id"],
+                            'user_id' => json_decode(JWTAuth::parseToken()->authenticate(), true)["id"],
+                            "created_at" =>  date('Y-m-d H:i:s'),
+                            "updated_at" => date('Y-m-d H:i:s'),
+                        ]
+                    );
+
+                return "liked";
+            } elseif ($likes == 1) {
+                DB::table('post_comment_likes')
+                    ->where("comment_id", $request->only('id')["id"])
+                    ->where("user_id", json_decode(JWTAuth::parseToken()->authenticate(), true)["id"])
+                    ->delete();
+
+                return "unliked";
+            }
+
+        }
+
+    }
 
     public function getComments(Request $request) {
 
@@ -395,6 +459,23 @@ class ContentController extends Controller
                 ->toArray();
 
             foreach ($comments as $comment) {
+
+                $comment->likes = DB::table('post_comment_likes')
+                    ->where("comment_id", $comment->id)
+                    ->get()
+                    ->count();
+
+                $has_liked = DB::table('post_comment_likes')
+                    ->where("comment_id", $comment->id)
+                    ->where("user_id", json_decode(JWTAuth::parseToken()->authenticate(), true)["id"])
+                    ->count();
+    
+                if ($has_liked == 0) {
+                    $comment->hasLiked = "";
+                } else {
+                    $comment->hasLiked = "liked";
+                }
+
                 $comment->created_at = date("m/d/Y H:i:s", strtotime($comment->created_at));
                 $comment->updated_at = date("m/d/Y H:i:s", strtotime($comment->updated_at));
             }
@@ -419,16 +500,46 @@ class ContentController extends Controller
             $content = preg_replace('/<[^>]*>/', '', $content);
             $content = str_replace('{{BR}}', '<br>', $content);
 
+            $pattern = "/@\[(.*?)\]\((\d+)\)/";
+            preg_match_all($pattern, $content, $matches, PREG_PATTERN_ORDER);
+
+            // Sender
+            $user = DB::table('users')
+                ->where("id", $user_id)
+                ->first();        
+            
+            for ($i = 0; $i < count($matches[1]); $i++) {
+
+                $match_user_id = $matches[2][$i];
+
+                $match_user = DB::table('users')
+                    ->where("id", $match_user_id)
+                    ->first();
+
+                // Replace Comment with link
+                $content = str_replace($matches[0][$i], "<a href='" . env("APP_URL") . "/app/user/" . $match_user->email . "'>@" . $match_user->name . "</a>", $content);
+
+                // Send Notification
+                $notification = new NotificationController();
+                $notification->sendNotification(
+                    $match_user_id,
+                    $user_id,
+                    "$user->name mentioned you in his comment.",
+                    $user->name . " mentioned you in his comment: " . $content,
+                    "/app/post/$post_id",
+                    "comment_mention"
+                );
+
+                unset($notification);
+                unset($match_user_id);
+                unset($match_user);
+            }
+
             if (DB::insert('insert into post_comments (user_id, post_id, comment_content, created_at, updated_at) values (?, ?, ?, ?, ?)', [$user_id, $post_id, $content, $created_at, $updated_at])) {
 
                 // Get Post Owner
                 $post = DB::table('posts')
                     ->where("id", $post_id)
-                    ->first();
-
-                // Sender
-                $user = DB::table('users')
-                    ->where("id", $user_id)
                     ->first();
 
                 // Send notification to user
@@ -660,6 +771,204 @@ class ContentController extends Controller
                 return response([
                     'error' => true,
                     'message' => 'Post could not be reported'
+                ]);
+            }
+
+        }
+
+    }
+
+    public function pinPost(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+            $postId =  $request->only('postId')["postId"];
+
+            $currentUser = DB::table('users')->where('id', $user_id)->first();
+            $userAdmin = $currentUser->is_admin;
+
+            if ($userAdmin == 0) {
+                return new JsonResponse(["message" => "You are not authorized to perform this action."], 401);
+            }
+
+            $currentPinnedStatus = DB::table('posts')
+                ->where('id', $postId)
+                ->first();
+            $currentPinnedStatus = $currentPinnedStatus->is_pinned;
+
+            $pinnedStatus = 0;
+
+            if ($currentPinnedStatus == 0) {
+                $pinnedStatus = 1;
+            } else {
+                $pinnedStatus = 0;
+            }
+
+            // Update
+            $updatedPost = DB::table('posts')
+                ->where('id', $postId)
+                ->update([
+                    'is_pinned' => $pinnedStatus,
+                    'updated_at' => date('Y-m-d H:i:s', time())
+                ]);
+
+            if ($updatedPost) {
+                return response([
+                    'error' => false,
+                    'message' => 'Post (un-)pinned',
+                    'is_pinned' => $pinnedStatus
+                ]);
+            } else {
+                return response([
+                    'error' => true,
+                    'message' => 'Post could not be (un-)pinned',
+                    'is_pinned' => $pinnedStatus
+                ]);
+            }
+
+        }
+
+    }
+
+    public function togglePostStatus(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+            $postId =  $request->only('postId')["postId"];
+
+            $currentUser = DB::table('users')->where('id', $user_id)->first();
+            $userAdmin = $currentUser->is_admin;
+
+            if ($userAdmin == 0) {
+                return new JsonResponse(["message" => "You are not authorized to perform this action."], 401);
+            }
+
+            $currentSatus = DB::table('posts')
+                ->where('id', $postId)
+                ->first();
+            $currentSatus = $currentSatus->status;
+
+            $newStatus = 0;
+
+            if ($currentSatus == 0) {
+                $newStatus = 1;
+            } else {
+                $newStatus = 0;
+            }
+
+            // Update
+            $updatedPost = DB::table('posts')
+                ->where('id', $postId)
+                ->update([
+                    'status' => $newStatus,
+                    'updated_at' => date('Y-m-d H:i:s', time())
+                ]);
+
+            if ($updatedPost) {
+                return response([
+                    'error' => false,
+                    'message' => 'Post enabled/disabled',
+                    'status' => $newStatus
+                ]);
+            } else {
+                return response([
+                    'error' => true,
+                    'message' => 'Post could not be enabled/disabled',
+                    'status' => $newStatus
+                ]);
+            }
+
+        }
+
+    }
+
+    public function clearComments(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+            $postId =  $request->only('postId')["postId"];
+
+            $currentUser = DB::table('users')->where('id', $user_id)->first();
+            $userAdmin = $currentUser->is_admin;
+
+            if ($userAdmin == 0) {
+                return new JsonResponse(["message" => "You are not authorized to perform this action."], 401);
+            }
+
+            $comments = DB::table('post_comments')
+                ->where('post_id', $postId)
+                ->get();
+
+            foreach ($comments as $comment) {
+                $commentId = $comment->id;
+                DB::table('post_comment_likes')
+                    ->where('comment_id', $commentId)
+                    ->delete();
+                unset($commentId);
+            }
+
+            $deleteComments = DB::table('post_comments')
+                ->where('post_id', $postId)
+                ->delete();   
+
+            if ($deleteComments) {
+                return response([
+                    'error' => false,
+                    'message' => 'Comments cleared',
+                ]);
+            } else {
+                return response([
+                    'error' => true,
+                    'message' => 'Comments could not be cleared',
+                ]);
+            }
+
+        }
+
+    }
+    public function clearLikes(Request $request) {
+
+        if (JWTAuth::parseToken()->authenticate()) {
+
+            $user_id = json_decode(JWTAuth::parseToken()->authenticate(), true)["id"];
+            $postId =  $request->only('postId')["postId"];
+
+            $currentUser = DB::table('users')->where('id', $user_id)->first();
+            $userAdmin = $currentUser->is_admin;
+
+            if ($userAdmin == 0) {
+                return new JsonResponse(["message" => "You are not authorized to perform this action."], 401);
+            }
+
+            $deleteComments = DB::table('post_likes')
+                ->where('post_id', $postId)
+                ->delete();
+
+            // Get Comment Likes
+            $comments = DB::table('post_comments')
+                ->where('post_id', $postId)
+                ->get();
+
+            foreach ($comments as $comment) {
+                $commentId = $comment->id;
+                DB::table('post_comment_likes')
+                    ->where('comment_id', $commentId)
+                    ->delete();
+                unset($commentId);
+            }
+
+            if ($deleteComments) {
+                return response([
+                    'error' => false,
+                    'message' => 'Likes cleared',
+                ]);
+            } else {
+                return response([
+                    'error' => true,
+                    'message' => 'Likes could not be cleared',
                 ]);
             }
 
