@@ -232,6 +232,7 @@ class UserController extends Controller
             $department = $request->only('department')["department"];
             $birthday = $request->only('birthday')["birthday"];
             $phone = $request->only('phone')["phone"];
+            $notificationType = $request->only('notificationType')["notificationType"];
 
             $created_at = date('Y-m-d H:i:s', time());
             $updated_at = date('Y-m-d H:i:s', time());
@@ -269,6 +270,12 @@ class UserController extends Controller
                         'user_phone' => $phone,
                         'updated_at' => $updated_at
                     ]);
+
+                DB::table('users')
+                    ->where('id', $user_id)
+                    ->update([
+                        'notification_delivery_type' => $notificationType
+                    ]);
             }
 
             return response([
@@ -288,7 +295,7 @@ class UserController extends Controller
 
                 $user_information = DB::table('user_information')
                     ->join('users', 'users.id', '=', 'user_information.user_id')
-                    ->select('users.name', 'users.avatar', 'users.banner', 'users.email', 'users.user_online', 'users.user_last_online', 'user_information.user_slogan', 'user_information.user_country', 'user_information.user_city', 'user_information.user_street', 'user_information.user_department', 'user_information.user_birthday', 'user_information.user_phone')
+                    ->select('users.name', 'users.avatar', 'users.banner', 'users.email', 'users.user_online', 'users.user_last_online', 'user_information.user_slogan', 'user_information.user_country', 'user_information.user_city', 'user_information.user_street', 'user_information.user_department', 'user_information.user_birthday', 'user_information.user_phone', 'users.notification_delivery_type')
                     ->where('users.email', $user_id)
                     ->get();
                 
@@ -308,7 +315,7 @@ class UserController extends Controller
                 
                 $user_information = DB::table('user_information')
                     ->join('users', 'users.id', '=', 'user_information.user_id')
-                    ->select('users.id', 'users.name', 'users.avatar', 'users.banner', 'users.email', 'users.user_online', 'users.user_last_online', 'user_information.user_slogan', 'user_information.user_country', 'user_information.user_city', 'user_information.user_street', 'user_information.user_department', 'user_information.user_birthday', 'user_information.user_phone')
+                    ->select('users.id', 'users.name', 'users.avatar', 'users.banner', 'users.email', 'users.user_online', 'users.user_last_online', 'user_information.user_slogan', 'user_information.user_country', 'user_information.user_city', 'user_information.user_street', 'user_information.user_department', 'user_information.user_birthday', 'user_information.user_phone', 'users.notification_delivery_type')
                     ->where('users.id', $user_id)
                     ->get();
 

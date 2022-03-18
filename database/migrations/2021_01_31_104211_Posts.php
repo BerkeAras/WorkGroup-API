@@ -21,6 +21,7 @@ class Posts extends Migration
             $table->integer('group_id');
             $table->longText('post_content')->nullable();
             $table->integer('status');
+            $table->boolean('is_pinned')->default(false);
             $table->timestamps();
         });
 
@@ -37,6 +38,20 @@ class Posts extends Migration
             $table->integer('user_id');
             $table->integer('parent_id');
             $table->longText('comment_content')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('post_comment_likes', function (Blueprint $table) {
+            $table->increments('id');
+            $table->integer('comment_id');
+            $table->integer('user_id');
+            $table->timestamps();
+        });
+        Schema::create('post_comment_mentions', function (Blueprint $table) {
+            $table->increments('id');
+            $table->integer('post_id');
+            $table->integer('comment_id');
+            $table->integer('user_id');
             $table->timestamps();
         });
        
@@ -75,6 +90,8 @@ class Posts extends Migration
         Schema::drop('posts');
         Schema::drop('post_likes');
         Schema::drop('post_comments');
+        Schema::drop('post_comment_likes');
+        Schema::drop('post_comment_mentions');
         Schema::drop('post_images');
         Schema::drop('post_files');
     }

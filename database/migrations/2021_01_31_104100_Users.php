@@ -25,7 +25,7 @@ class Users extends Migration
             $table->boolean('account_activated')->default(false);
             $table->string('activation_token', 255);
             $table->boolean('is_admin')->default(false);
-            $table->enum('notification_delivery_type',array('email', 'inapp'))->default('email');
+            $table->enum('notification_delivery_type',array('email', 'inapp'))->default('inapp');
             $table->boolean('user_online');
             $table->datetime('user_last_online');
             $table->string('user_last_ip')->nullable();

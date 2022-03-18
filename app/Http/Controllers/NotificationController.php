@@ -57,12 +57,12 @@ class NotificationController extends Controller
         // Send the notification
         if ($user->notification_delivery_type == 'email') {
             // Send the email
-            $this->sendEmail($user->email, $notification_subject, $notification_content, $sender_name, $user->name);
+            $this->sendEmail($user->email, $notification_subject, $notification_content, $sender_name, $user->name, $notification_link);
         }
     }
 
     // Sends an email
-    public function sendEmail($email, $subject, $content, $sender_name, $recipient_name)
+    public function sendEmail($email, $subject, $content, $sender_name, $recipient_name, $link)
     {
         // Send the email
 
@@ -72,6 +72,7 @@ class NotificationController extends Controller
             'recipient_name' => $recipient_name,
             'subject' => $subject,
             'content' => $content,
+            'link' => $link
         ];
 
         dispatch(new NotificationMailJob($details));
