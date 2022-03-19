@@ -98,6 +98,77 @@ class SearchController extends Controller
 
                 array_push($resultsArray, $knowledgeBaseFiles);
 
+                // Posts
+                $searchPosts = DB::table('posts')
+                    ->select('posts.*', 'post_comments.post_id', 'post_comments.comment_content')
+                    ->leftJoin('post_comments', 'posts.id', '=', 'post_comments.post_id')
+                    ->where('posts.post_content', 'LIKE', "%$searchQuery%")
+                    ->orWhere('post_comments.comment_content', 'LIKE', "%$searchQuery%")
+                    ->orWhere('posts.id', 'LIKE', "$searchQuery")
+                    ->limit(4)
+                    ->get();
+
+                // Remove duplicates from groups
+                $searchPostsUnique = array();
+                foreach ($searchPosts as $v) {
+                    if (isset($searchPostsUnique[$v->id])) {
+                        // found duplicate
+                        continue;
+                    }
+                    // remember unique item
+                    $searchPostsUnique[$v->id] = $v;
+                }
+
+                // Remove if user should not see this post
+                foreach ($searchPostsUnique as $searchPostsUniqueItem) {
+
+                    $userId = JWTAuth::parseToken()->authenticate()->id;
+                    $userIsAdmin = DB::table('users')
+                        ->where('id', $userId)
+                        ->where('is_admin', 1)
+                        ->count();
+
+                    $newContent = strlen($searchPostsUniqueItem->post_content) > 30 ? substr($searchPostsUniqueItem->post_content,0,30)."..." : $searchPostsUniqueItem->post_content;
+
+                    $searchPostsUnique[$searchPostsUniqueItem->id]->post_content = strip_tags($newContent);
+
+                    if ($searchPostsUniqueItem->status == 0) {
+                        if ($userIsAdmin == 0) {
+                            unset($searchPostsUnique[$searchPostsUniqueItem->id]);
+                        }
+                    } else {
+                        if ($searchPostsUniqueItem->group_id != 0) {
+                            // Check if user is in the group
+                            $groupId = $searchPostsUniqueItem->group_id;
+    
+                            // Check if group is private
+                            $groupIsPrivate = DB::table('groups')
+                                ->where('id', $groupId)
+                                ->where('group_private', 1)
+                                ->count();
+    
+                            if ($groupIsPrivate == 1) {
+                                $userInGroup = DB::table('group_members')
+                                    ->where('group_id', $groupId)
+                                    ->where('user_id', $userId)
+                                    ->count();
+        
+                                if ($userInGroup == 0) {
+                                    // User is not in the group
+                                    
+                                    // Check if user is admin
+                                    if ($userIsAdmin == 0) {
+                                        unset($searchPostsUnique[$searchPostsUniqueItem->id]);
+                                    }
+                                }
+                            }   
+                        }
+                    }
+
+                }
+
+                array_push($resultsArray, $searchPostsUnique);
+
                 return response()->json($resultsArray);
             } else {
                 return response([
