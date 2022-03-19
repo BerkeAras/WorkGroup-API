@@ -763,6 +763,31 @@ class ContentController extends Controller
             );
 
             if ($insertedPostReport) {
+
+                // Get Current User
+                $user = DB::table('users')
+                    ->where('id', $user_id)
+                    ->first();
+
+                // Send Report to Administrator
+                $administrator = DB::table('users')
+                    ->where('is_admin', 1)
+                    ->where('account_activated', 1)
+                    ->orderBy('user_online', 'desc')
+                    ->first();
+
+                $administrator_id = $administrator->id;
+
+                $notification = new NotificationController();
+                $notification->sendNotification(
+                    $administrator_id,
+                    $user_id,
+                    "$user->name reported a post.",
+                    $user->name . " just reported a post. Reason: $reportTypeValue. Details: $reportTextValue. Please check the post and take appropriate action.",
+                    "/app/post/$postId",
+                    "report"
+                );
+
                 return response([
                     'error' => false,
                     'message' => 'Post reported'
